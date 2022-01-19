@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-PORT=8000
-echo "Port: $PORT"
+IP=$1
+PORT=$2
 
 # POST method predict
 curl -d '{  
@@ -25,4 +25,6 @@ curl -d '{
    }
 }'\
      -H "Content-Type: application/json" \
-     -X POST http://localhost:$PORT/predict
+     -X POST http://$IP:$PORT/predict
+
+#TODO: replace localhost with variable; localhost for unit test; IP of AWS Container for smoke testing

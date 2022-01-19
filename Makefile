@@ -7,7 +7,7 @@
 
 setup:
 	# Create python virtualenv & source it
-	python3 -m venv ~/.devops
+	python3.7 -m venv ~/.devops
 	source ~/.devops/bin/activate
 
 install:
