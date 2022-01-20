@@ -22,7 +22,7 @@ commands:
 
 
 jobs:
-  build:
+  build_app:
     docker:
       # Use the same Docker base as the project
       - image: python:3.7.3-stretch
@@ -74,7 +74,10 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            # TODO install docker
+            # TODO install and start docker
+            yum update -y
+            yum install docker -y
+            service docker start
       - run:
           name: build docker image
           command: |
@@ -99,7 +102,39 @@ jobs:
   # ToDo
   # create AWS Kubernetes Cluster -> AWS EKS
   # include circleci id in stack names
-  # create_infrastructure:  
+  create_network_infrastructure:  
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: create VPCs for EKS Cluster
+          command: |
+            aws cloudformation deploy \
+              --template-file infrastructure/amazon-eks-vpc-sample.yaml \
+              --tags project=ml-app \
+              --stack-name "ml-app-network-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" 
+
+  create_eks_cluster:  
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            # install eksctl -> https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
+            curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+            sudo mv /tmp/eksctl /usr/local/bin
+            eksctl version
+      - run:
+          name:
+          command: |
+            # tbd
+
+  # ToDo
+  # deploy_container: 
 
   # ToDo
   # smoketest_app:  
@@ -115,12 +150,23 @@ jobs:
 workflows:
   default:
     jobs:
-      - build
+      - build_app
       # - test_app # optional
       - build_container
+          requires: [build_app]
       # - scan_container # optional
-      - create_infrastructure
-      - deploy_containter
+      - create_network_infrastructure
+          requires: [build_container] 
+          filters:
+            branches:
+              only: [master]
+      - create_eks_cluster
+          requires: [create_network_infrastructure]
+      - deploy_container
+          requires: [create_eks_cluster]
       - smoketest_app
+          requires: [deploy_container]
       - prod_promotion
+          requires: [smoketest_app]
       - cleanup
+          requires: [prod_promotion]
