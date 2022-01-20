@@ -1,3 +1,5 @@
 .devops/
 dockertoken.txt
 screenshots/todo.txt
+__pycache__/test_make_prediction.cpython-37-pytest-6.2.5.pyc
+__pycache__/make_prediction.cpython-37.pyc
