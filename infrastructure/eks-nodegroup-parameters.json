@@ -1,0 +1,18 @@
+[
+	{
+		"ParameterKey": "ClusterControlPlaneSecurityGroup",
+		"ParameterValue": "tbd"
+	},
+	{
+		"ParameterKey": "ClusterName",
+		"ParameterValue": "web-app-cluster"
+	},
+	{
+		"ParameterKey": "KeyName",
+		"ParameterValue": "EKSworkerKeyPair"
+	},
+	{
+		"ParameterKey": "NodeGroupName",
+		"ParameterValue": "eks-nodegroup-web-app"
+	}
+]
