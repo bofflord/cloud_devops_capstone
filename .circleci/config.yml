@@ -111,9 +111,10 @@ jobs:
           name: create VPCs for EKS Cluster
           command: |
             aws cloudformation deploy \
-              --template-file infrastructure/amazon-eks-vpc-sample.yaml \
+              --template-file infrastructure/eks-vpc-role-cluster.yaml \
+              --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM"\
               --tags project=ml-app \
-              --stack-name "ml-app-network-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --stack-name "ml-app-eks-cluster-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" 
 
   create_eks_cluster:  
@@ -122,16 +123,14 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install dependencies
-          command: |
-            # install eksctl -> https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html
-            curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
-            sudo mv /tmp/eksctl /usr/local/bin
-            eksctl version
-      - run:
           name:
           command: |
-            # tbd
+            aws cloudformation deploy \
+              --template-file infrastructure/eks-nodegroup.yaml \
+              --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM"\
+              --tags project=ml-app \
+              --stack-name "ml-app-eks-worker-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" 
 
   # ToDo
   # deploy_container: 

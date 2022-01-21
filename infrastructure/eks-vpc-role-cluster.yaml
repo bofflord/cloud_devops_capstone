@@ -7,7 +7,13 @@ Parameters:
 
   EKSIAMRoleName:
     Type: String
+    Default: EKSIAMRole
     Description: The name of the IAM role for the EKS service to assume.
+
+  EKSClusterName:
+    Type: String
+    Default: EKSCluster
+    Description: The desired name of your AWS EKS Cluster.
 
   VpcBlock:
     Type: String
@@ -213,22 +219,23 @@ Resources:
       VpcId: !Ref VPC
 
   EKSCluster:
-  Type: AWS::EKS::Cluster
-  Properties:
-    Name: !Ref EKSClusterName
-    RoleArn:
-      "Fn::GetAtt": ["EKSIAMRole", "Arn"]
-    ResourcesVpcConfig:
-      SecurityGroupIds:
-      - !Ref ControlPlaneSecurityGroup
-      SubnetIds:
-      - !Ref Subnet01
-      - !Ref Subnet02
-  DependsOn: [EKSIAMRole, Subnet01, Subnet02, ControlPlaneSecurityGroup]
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name: !Ref EKSClusterName
+      RoleArn:
+        "Fn::GetAtt": ["EKSIAMRole", "Arn"]
+      ResourcesVpcConfig:
+        SecurityGroupIds:
+        - !Ref ControlPlaneSecurityGroup
+        SubnetIds:
+        - !Ref Subnet01
+        - !Ref Subnet02
+    DependsOn: [EKSIAMRole, Subnet01, Subnet02, ControlPlaneSecurityGroup]
 
 
 Outputs:
 
+  # TODO: add Export to output, similar to project 2
   SubnetIds:
     Description: All subnets in the VPC
     Value:

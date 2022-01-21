@@ -1,11 +1,11 @@
 [
 	{
 		"ParameterKey": "ClusterControlPlaneSecurityGroup",
-		"ParameterValue": "tbd"
+		"ParameterValue": "sg-025e53d937dadd907"
 	},
 	{
 		"ParameterKey": "ClusterName",
-		"ParameterValue": "web-app-cluster"
+		"ParameterValue": "EKSCluster"
 	},
 	{
 		"ParameterKey": "KeyName",
