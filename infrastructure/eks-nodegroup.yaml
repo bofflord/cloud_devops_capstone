@@ -9,8 +9,9 @@ Metadata:
       - Label:
           default: EKS Cluster
         Parameters:
+          - ID
           - ClusterName
-          - ClusterControlPlaneSecurityGroup
+          # - ClusterControlPlaneSecurityGroup
       - Label:
           default: Worker Node Configuration
         Parameters:
@@ -24,24 +25,30 @@ Metadata:
           - NodeVolumeSize
           - KeyName
           - BootstrapArguments
-      - Label:
-          default: Worker Network Configuration
-        Parameters:
-          - VpcId
-          - Subnets
+      # - Label:
+      #     default: Worker Network Configuration
+      #   Parameters:
+      #     # - VpcId
+      #     # - Subnets
 
 Parameters:
+
+  ID:
+    Description: Unique identifier.
+    Type: String
+
   BootstrapArguments:
     Type: String
     Default: ""
     Description: "Arguments to pass to the bootstrap script. See files/bootstrap.sh in https://github.com/awslabs/amazon-eks-ami"
 
-  ClusterControlPlaneSecurityGroup:
-    Type: "AWS::EC2::SecurityGroup::Id"
-    Description: The security group of the cluster control plane.
+  # ClusterControlPlaneSecurityGroup:
+  #   Type: "AWS::EC2::SecurityGroup::Id"
+  #   Description: The security group of the cluster control plane.
 
   ClusterName:
     Type: String
+    # Default: !Sub ${ID}-ML-APP-CLUSTER
     Description: The cluster name provided when the cluster was created. If it is incorrect, nodes will not be able to join the cluster.
 
   KeyName:
@@ -65,6 +72,7 @@ Parameters:
 
   NodeGroupName:
     Type: String
+    # Default: !Sub ${ID}-ML-APP-NODEGROUP
     Description: Unique identifier for the Node Group.
 
   NodeImageId:
@@ -311,13 +319,13 @@ Parameters:
     Default: 20
     Description: Node volume size
 
-  Subnets:
-    Type: "List<AWS::EC2::Subnet::Id>"
-    Description: The subnets where workers can be created.
+  # Subnets:
+  #   Type: "List<AWS::EC2::Subnet::Id>"
+  #   Description: The subnets where workers can be created.
 
-  VpcId:
-    Type: "AWS::EC2::VPC::Id"
-    Description: The VPC of the worker instances
+  # VpcId:
+  #   Type: "AWS::EC2::VPC::Id"
+  #   Description: The VPC of the worker instances
 
 Conditions:
   HasNodeImageId: !Not
@@ -358,7 +366,8 @@ Resources:
       Tags:
         - Key: !Sub kubernetes.io/cluster/${ClusterName}
           Value: owned
-      VpcId: !Ref VpcId
+      VpcId: 
+        Fn::ImportValue: !Sub ${ID}-VPCID
 
   NodeSecurityGroupIngress:
     Type: "AWS::EC2::SecurityGroupIngress"
@@ -377,7 +386,9 @@ Resources:
     Properties:
       Description: Allow pods to communicate with the cluster API Server
       FromPort: 443
-      GroupId: !Ref ClusterControlPlaneSecurityGroup
+      # GroupId: !Ref ClusterControlPlaneSecurityGroup
+      GroupId: 
+        Fn::ImportValue: !Sub ${ID}-SECURITYGROUPS
       IpProtocol: tcp
       SourceSecurityGroupId: !Ref NodeSecurityGroup
       ToPort: 443
@@ -389,7 +400,8 @@ Resources:
       Description: Allow the cluster control plane to communicate with worker Kubelet and pods
       DestinationSecurityGroupId: !Ref NodeSecurityGroup
       FromPort: 1025
-      GroupId: !Ref ClusterControlPlaneSecurityGroup
+      GroupId: 
+        Fn::ImportValue: !Sub ${ID}-SECURITYGROUPS
       IpProtocol: tcp
       ToPort: 65535
 
@@ -400,7 +412,8 @@ Resources:
       Description: Allow the cluster control plane to communicate with pods running extension API servers on port 443
       DestinationSecurityGroupId: !Ref NodeSecurityGroup
       FromPort: 443
-      GroupId: !Ref ClusterControlPlaneSecurityGroup
+      GroupId: 
+        Fn::ImportValue: !Sub ${ID}-SECURITYGROUPS
       IpProtocol: tcp
       ToPort: 443
 
@@ -412,7 +425,8 @@ Resources:
       FromPort: 1025
       GroupId: !Ref NodeSecurityGroup
       IpProtocol: tcp
-      SourceSecurityGroupId: !Ref ClusterControlPlaneSecurityGroup
+      SourceSecurityGroupId: 
+        Fn::ImportValue: !Sub ${ID}-SECURITYGROUPS
       ToPort: 65535
 
   NodeSecurityGroupFromControlPlaneOn443Ingress:
@@ -423,7 +437,8 @@ Resources:
       FromPort: 443
       GroupId: !Ref NodeSecurityGroup
       IpProtocol: tcp
-      SourceSecurityGroupId: !Ref ClusterControlPlaneSecurityGroup
+      SourceSecurityGroupId: 
+        Fn::ImportValue: !Sub ${ID}-SECURITYGROUPS
       ToPort: 443
 
   NodeLaunchConfig:
@@ -469,7 +484,8 @@ Resources:
         - Key: !Sub kubernetes.io/cluster/${ClusterName}
           PropagateAtLaunch: "true"
           Value: owned
-      VPCZoneIdentifier: !Ref Subnets
+      VPCZoneIdentifier: 
+        - Fn::ImportValue: !Sub ${ID}-SUBNETS
     UpdatePolicy:
       AutoScalingRollingUpdate:
         MaxBatchSize: "1"

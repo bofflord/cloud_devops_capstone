@@ -16,8 +16,7 @@ Parameters:
 
   EKSClusterName:
     Type: String
-    # TODO: add EKSClustername to outputs
-    # Default: EKSCluster
+    Default: EKSCluster
     Description: The desired name of your AWS EKS Cluster.
 
   VpcBlock:
@@ -49,7 +48,7 @@ Metadata:
         Parameters:
           - ID
           - EKSIAMRoleName
-          # - EKSClusterName
+          - EKSClusterName
           - VpcBlock
           - Subnet01Block
           - Subnet02Block
@@ -243,6 +242,7 @@ Resources:
 
 Outputs:
 
+  # TODO: add Export to output, similar to project 2
   SubnetIds:
     Description: All subnets in the VPC
     Value:
@@ -250,17 +250,11 @@ Outputs:
       - HasMoreThan2Azs
       - !Join [ ",", [ !Ref Subnet01, !Ref Subnet02, !Ref Subnet03 ] ]
       - !Join [ ",", [ !Ref Subnet01, !Ref Subnet02 ] ]
-    Export:
-      Name: !Sub ${ID}-SUBNETS
 
   SecurityGroups:
     Description: Security group for the cluster control plane communication with worker nodes
     Value: !Join [ ",", [ !Ref ControlPlaneSecurityGroup ] ]
-    Export:
-      Name: !Sub ${ID}-SECURITYGROUPS
 
   VpcId:
     Description: The VPC Id
     Value: !Ref VPC
-    Export:
-      Name: !Sub ${ID}-VPCID

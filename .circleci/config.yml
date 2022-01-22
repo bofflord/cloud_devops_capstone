@@ -108,14 +108,17 @@ jobs:
     steps:
       - checkout
       - run:
-          name: create VPCs for EKS Cluster
+          name: create VPCs, IAM role and EKS Cluster
           command: |
+            ID=${CIRCLE_WORKFLOW_ID:0:7}
             aws cloudformation deploy \
               --template-file infrastructure/eks-vpc-role-cluster.yaml \
               --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM"\
               --tags project=ml-app \
-              --stack-name "ml-app-eks-cluster-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" 
+              --stack-name "ml-app-eks-cluster-${ID}" \
+              --parameter-overrides \
+              ID="${ID}" \
+              EKSClusterName="${ID}-ML-APP-CLUSTER" 
 
   create_eks_cluster:  
     docker:
@@ -123,17 +126,44 @@ jobs:
     steps:
       - checkout
       - run:
-          name:
+          name: create worker node group for EKS Cluster
           command: |
+            ID=${CIRCLE_WORKFLOW_ID:0:7}
             aws cloudformation deploy \
               --template-file infrastructure/eks-nodegroup.yaml \
               --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM"\
               --tags project=ml-app \
-              --stack-name "ml-app-eks-worker-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" 
+              --stack-name "ml-app-eks-worker-${ID}" \
+              --parameter-overrides \
+              ID="${ID}" \
+              KeyName="EKSworkerKeyPair" \
+              ClusterName="${ID}-ML-APP-CLUSTER" \
+              NodeGroupName="${ID}-ML-APP-NODEGROUP"
 
   # ToDo
-  # deploy_container: 
+  deploy_container: 
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            # TODO install and start docker
+            yum update -y
+            yum install docker -y
+            service docker start
+      - run: 
+          name: create kubeconfig for EKS
+          command: |
+            aws eks list-clusters
+            aws eks update-kubeconfig --region us-east-1 --name cluster-name
+            aws get svc
+      - run: 
+          name: deploy container to EKS Cluster
+          command: |
+            kubectl apply -f eks_deployment.yaml
+            kubectl get deployments
 
   # ToDo
   # smoketest_app:  
