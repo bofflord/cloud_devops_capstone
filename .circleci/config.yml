@@ -16,10 +16,7 @@ commands:
           name: Destroy environments
           when: on_fail
           command: |
-            aws s3 rb --force s3://udapeople-<< parameters.workflow_id >>
-            aws cloudformation delete-stack --stack-name udapeople-backend-<< parameters.workflow_id >>
-            aws cloudformation delete-stack --stack-name udapeople-frontend-<< parameters.workflow_id >>  
-
+            eksctl delete cluster --name ${workflow_id}-ML-APP-CLUSTER --region us-east-1
 
 jobs:
   build_app:
@@ -99,46 +96,46 @@ jobs:
   # optional element -> e.g. security scanning of Docker container
   # scan_container:  
 
-  # ToDo
+
+# ToDo
   # create AWS Kubernetes Cluster -> AWS EKS
   # include circleci id in stack names
-  create_network_infrastructure:  
-    docker:
-      - image: amazon/aws-cli
-    steps:
-      - checkout
-      - run:
-          name: create VPCs, IAM role and EKS Cluster
-          command: |
-            ID=${CIRCLE_WORKFLOW_ID:0:7}
-            aws cloudformation deploy \
-              --template-file infrastructure/eks-vpc-role-cluster.yaml \
-              --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM"\
-              --tags project=ml-app \
-              --stack-name "ml-app-eks-cluster-${ID}" \
-              --parameter-overrides \
-              ID="${ID}" \
-              EKSClusterName="${ID}-ML-APP-CLUSTER" 
-
   create_eks_cluster:  
     docker:
       - image: amazon/aws-cli
     steps:
       - checkout
       - run:
-          name: create worker node group for EKS Cluster
+          name: Install dependencies
+          command: |
+            # TODO install and start eksctl
+            curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/v0.80.0/eksctl_Linux_amd64.tar.gz" | tar xz -C /tmp
+            sudo mv /tmp/eksctl /usr/local/bin
+            eksctl version
+
+      - run:
+          name: created managed Kubernetes cluster via AWS Fargate
           command: |
             ID=${CIRCLE_WORKFLOW_ID:0:7}
-            aws cloudformation deploy \
-              --template-file infrastructure/eks-nodegroup.yaml \
-              --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM"\
-              --tags project=ml-app \
-              --stack-name "ml-app-eks-worker-${ID}" \
-              --parameter-overrides \
-              ID="${ID}" \
-              KeyName="EKSworkerKeyPair" \
-              ClusterName="${ID}-ML-APP-CLUSTER" \
-              NodeGroupName="${ID}-ML-APP-NODEGROUP"
+            # create managed cluster on AWS Fargate
+            eksctl create cluster \
+            --name ${ID}-ML-APP-CLUSTER \
+            --region us-east-1 \
+            --fargate
+            # View Kubernetes resources
+            kubectl get nodes -o wide
+            # View the workloads running on the cluster
+            kubectl get pods --all-namespaces -o wide
+            # create Fargate profile ml-app -> see https://docs.aws.amazon.com/eks/latest/userguide/fargate-profile.html
+            eksctl create fargateprofile \
+            --cluster ${ID}-ML-APP-CLUSTER \
+            --name fargate_profile_ml-app \
+            --namespace ml-app \
+            --region us-east-1
+            # verify that profile was created
+            aws eks list-fargate-profiles \
+            --cluster-name ${ID}-ML-APP-CLUSTER \
+            --region us-east-1
 
   # ToDo
   deploy_container: 
@@ -147,23 +144,108 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install dependencies
+          name: create namespace
           command: |
-            # TODO install and start docker
-            yum update -y
-            yum install docker -y
-            service docker start
-      - run: 
-          name: create kubeconfig for EKS
+            kubectl create namespace ml-app
+      - run:
+          name: deploy container to Fargate cluster
           command: |
-            aws eks list-clusters
-            aws eks update-kubeconfig --region us-east-1 --name cluster-name
-            aws get svc
-      - run: 
-          name: deploy container to EKS Cluster
+            kubectl apply -f fargate_deployment.yaml
+            # list all resources in namespace
+            kubectl get all -n ml-app
+      - run:
+          name: create service
           command: |
-            kubectl apply -f eks_deployment.yaml
-            kubectl get deployments
+            kubectl apply -f fargate_service.yaml
+            # describe details of service
+            kubectl -n ml-app describe service ml-app-service
+            # view details of pod ml-app-deployment-6c76c467-c5pbd
+            kubectl -n ml-app describe pod ml-app-deployment-6c76c467-c5pbd
+      - run:
+          name: expose deployment of type LoadBalancer
+          command: |
+            # kubectl expose deployment ml-app-deployment \
+            # --type=LoadBalancer \
+            # --name=ml-app-loadbalancer \
+            # -n ml-app
+            kubectl expose deployment ml-app-deployment \
+            --type=NodePort  \
+            --name=ml-app-service-exposed\
+            -n ml-app
+            # get information about service
+            kubectl get service/ml-app-loadbalancer \
+            -n ml-app \
+            |  awk {'print $1" " $2 " " $4 " " $5'} | column -t
+            # list services
+            kubectl get svc -n ml-app
+
+
+  # ToDo
+  # create AWS Kubernetes Cluster -> AWS EKS
+  # include circleci id in stack names
+  # create_network_infrastructure:  
+  #   docker:
+  #     - image: amazon/aws-cli
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         name: create VPCs, IAM role and EKS Cluster
+  #         command: |
+  #           ID=${CIRCLE_WORKFLOW_ID:0:7}
+  #           aws cloudformation deploy \
+  #             --template-file infrastructure/eks-vpc-role-cluster.yaml \
+  #             --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM"\
+  #             --tags project=ml-app \
+  #             --stack-name "ml-app-eks-cluster-${ID}" \
+  #             --parameter-overrides \
+  #             ID="${ID}" \
+  #             EKSClusterName="${ID}-ML-APP-CLUSTER" 
+
+  # create_eks_cluster:  
+  #   docker:
+  #     - image: amazon/aws-cli
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         name: create worker node group for EKS Cluster
+  #         command: |
+  #           ID=${CIRCLE_WORKFLOW_ID:0:7}
+  #           aws cloudformation deploy \
+  #             --template-file infrastructure/eks-nodegroup.yaml \
+  #             --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM"\
+  #             --tags project=ml-app \
+  #             --stack-name "ml-app-eks-worker-${ID}" \
+  #             --parameter-overrides \
+  #             ID="${ID}" \
+  #             KeyName="EKSworkerKeyPair" \
+  #             ClusterName="${ID}-ML-APP-CLUSTER" \
+  #             NodeGroupName="${ID}-ML-APP-NODEGROUP"
+
+  # ToDo
+  # deploy_container: 
+  #   docker:
+  #     - image: amazon/aws-cli
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         name: Install dependencies
+  #         command: |
+  #           # TODO install and start docker
+  #           yum update -y
+  #           yum install docker -y
+  #           service docker start
+  #     - run: 
+  #         name: create kubeconfig for EKS
+  #         command: |
+  #           ID=${CIRCLE_WORKFLOW_ID:0:7}
+  #           aws eks list-clusters
+  #           aws eks update-kubeconfig --region us-east-1 --name "${ID}-ML-APP-CLUSTER"
+  #           aws get svc
+  #     - run: 
+  #         name: deploy container to EKS Cluster
+  #         command: |
+  #           kubectl apply -f eks_deployment.yaml
+  #           kubectl get deployments
 
   # ToDo
   # smoketest_app:  
