@@ -282,19 +282,18 @@ workflows:
       # - scan_container # optional
 
       # TODO: complete steps
-      # - create_eks_cluster
+      # - create_eks_cluster:
       #     requires: [build_app]
       #     filters:
       #       branches:
       #         only: [master]
-      # - create_eks_cluster
-      # - setup_eks_loadbalancer
+      # - setup_eks_loadbalancer:
       #     requires: [create_eks_cluster]
-      # - deploy_container
+      # - deploy_container:
       #     requires: [setup_eks_loadbalancer]
-      # - smoketest_app
+      # - smoketest_app:
       #     requires: [deploy_container]
-      # - prod_promotion
+      # - prod_promotion:
       #     requires: [smoketest_app]
-      # - cleanup
+      # - cleanup:
       #     requires: [prod_promotion]
