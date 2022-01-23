@@ -4,6 +4,10 @@
 #
 version: 2.1
 
+orbs: 
+  aws-eks: circleci/aws-eks@2.1.0
+  kubernetes: circleci/kubernetes@1.0
+
 commands:
   # TODO: adapt to project
   destroy-environment:
@@ -16,7 +20,7 @@ commands:
           name: Destroy environments
           when: on_fail
           command: |
-            eksctl delete cluster --name ${workflow_id}-ML-APP-CLUSTER --region us-east-1
+            eksctl delete cluster --name ${workflow_id}-ML-APP-CLUSTER --region ${AWS_REGION}
 
 jobs:
   build_app:
@@ -105,36 +109,44 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
+      - aws-eks/setup:
+          version 0.80.0
+      - kubernetes/install
       - run:
-          name: Install dependencies
+          name: check installs
           command: |
-            # TODO install and start eksctl
-            curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/v0.80.0/eksctl_Linux_amd64.tar.gz" | tar xz -C /tmp
-            sudo mv /tmp/eksctl /usr/local/bin
             eksctl version
-      - run:
-          name: created managed Kubernetes cluster via AWS Fargate
-          command: |
-            ID=${CIRCLE_WORKFLOW_ID:0:7}
-            # create managed cluster on AWS Fargate
-            eksctl create cluster \
-            --name ${ID}-ML-APP-CLUSTER \
-            --region us-east-1 \
-            --fargate
-            # View Kubernetes resources
-            kubectl get nodes -o wide
-            # View the workloads running on the cluster
-            kubectl get pods --all-namespaces -o wide
-            # create Fargate profile ml-app -> see https://docs.aws.amazon.com/eks/latest/userguide/fargate-profile.html
-            eksctl create fargateprofile \
-            --cluster ${ID}-ML-APP-CLUSTER \
-            --name fargate_profile_ml-app \
-            --namespace ml-app \
-            --region us-east-1
-            # verify that profile was created
-            aws eks list-fargate-profiles \
-            --cluster-name ${ID}-ML-APP-CLUSTER \
-            --region us-east-1
+            kubectl version
+      # - run:
+      #     name: Install dependencies
+      #     command: |
+      #       # TODO install and start eksctl
+      #       curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/v0.80.0/eksctl_Linux_amd64.tar.gz" | tar xz -C /tmp
+      #       sudo mv /tmp/eksctl /usr/local/bin
+      #       eksctl version
+      # - run:
+      #     name: created managed Kubernetes cluster via AWS Fargate
+      #     command: |
+      #       ID=${CIRCLE_WORKFLOW_ID:0:7}
+      #       # create managed cluster on AWS Fargate
+      #       eksctl create cluster \
+      #       --name ${ID}-ML-APP-CLUSTER \
+      #       --region ${AWS_REGION} \
+      #       --fargate
+      #       # View Kubernetes resources
+      #       kubectl get nodes -o wide
+      #       # View the workloads running on the cluster
+      #       kubectl get pods --all-namespaces -o wide
+      #       # create Fargate profile ml-app -> see https://docs.aws.amazon.com/eks/latest/userguide/fargate-profile.html
+      #       eksctl create fargateprofile \
+      #       --cluster ${ID}-ML-APP-CLUSTER \
+      #       --name fargate_profile_ml-app \
+      #       --namespace ml-app \
+      #       --region ${AWS_REGION}
+      #       # verify that profile was created
+      #       aws eks list-fargate-profiles \
+      #       --cluster-name ${ID}-ML-APP-CLUSTER \
+      #       --region ${AWS_REGION}
 
   # ToDo
   setup_eks_loadbalancer: 
@@ -275,7 +287,7 @@ jobs:
 workflows:
   default:
     jobs:
-    - build_container
+      - create_eks_cluster
       # - build_app
       # # - test_app # optional
       # - build_container:
