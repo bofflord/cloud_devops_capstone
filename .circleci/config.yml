@@ -110,7 +110,7 @@ jobs:
     steps:
       - checkout
       - aws-eks/setup:
-          version 0.80.0
+          version: 0.80.0
       - kubernetes/install
       - run:
           name: check installs
