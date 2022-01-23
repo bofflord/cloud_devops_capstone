@@ -109,6 +109,11 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            # install tar utility
+            yum install -y tar gzip
       - aws-eks/setup:
           version: 0.80.0
       - kubernetes/install
