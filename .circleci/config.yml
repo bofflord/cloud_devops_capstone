@@ -158,6 +158,8 @@ jobs:
             yum install -y tar gzip
             # install openssl
             yum install -y openssl
+            # install git, required for step "Install the TargetGroupBinding CRDs"
+            yum install -y git
       - aws-eks/setup:
           version: 0.80.0
       - kubernetes/install
@@ -178,8 +180,9 @@ jobs:
             eksctl version
             kubectl config view
       - run:
-          name: Create a kubeconfig for Amazon EKS -> https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html
+          name: Create a kubeconfig for Amazon EKS 
           command: |
+            # manual: -> https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html
             aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}
             # test configuration
             kubectl get pods --all-namespaces -o wide
