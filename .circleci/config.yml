@@ -74,10 +74,7 @@ jobs:
             # TODO install and start docker
             yum update -y
             # TEST
-            yum install -y yum-utils
-            yum-config-manager \
-            --add-repo \
-            https://download.docker.com/linux/centos/docker-ce.repo
+            yum install epel-release
             # TEST end
             yum install docker -y
             service docker start
