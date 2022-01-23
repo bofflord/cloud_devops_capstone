@@ -121,7 +121,7 @@ jobs:
           name: check installs
           command: |
             eksctl version
-            kubectl version
+            kubectl config view
       # - run:
       #     name: Install dependencies
       #     command: |
