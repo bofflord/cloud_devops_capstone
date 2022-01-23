@@ -129,29 +129,28 @@ jobs:
       #       curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/v0.80.0/eksctl_Linux_amd64.tar.gz" | tar xz -C /tmp
       #       sudo mv /tmp/eksctl /usr/local/bin
       #       eksctl version
-      # - run:
-      #     name: created managed Kubernetes cluster via AWS Fargate
-      #     command: |
-      #       ID=${CIRCLE_WORKFLOW_ID:0:7}
-      #       # create managed cluster on AWS Fargate
-      #       eksctl create cluster \
-      #       --name ${ID}-ML-APP-CLUSTER \
-      #       --region ${AWS_REGION} \
-      #       --fargate
-      #       # View Kubernetes resources
-      #       kubectl get nodes -o wide
-      #       # View the workloads running on the cluster
-      #       kubectl get pods --all-namespaces -o wide
-      #       # create Fargate profile ml-app -> see https://docs.aws.amazon.com/eks/latest/userguide/fargate-profile.html
-      #       eksctl create fargateprofile \
-      #       --cluster ${ID}-ML-APP-CLUSTER \
-      #       --name fargate_profile_ml-app \
-      #       --namespace ml-app \
-      #       --region ${AWS_REGION}
-      #       # verify that profile was created
-      #       aws eks list-fargate-profiles \
-      #       --cluster-name ${ID}-ML-APP-CLUSTER \
-      #       --region ${AWS_REGION}
+      - run:
+          name: created managed Kubernetes cluster via AWS Fargate
+          command: |
+            # create managed cluster on AWS Fargate
+            eksctl create cluster \
+            --name ${EKS_CLUSTER_NAME} \
+            --region ${AWS_REGION} \
+            --fargate
+            # View Kubernetes resources
+            kubectl get nodes -o wide
+            # View the workloads running on the cluster
+            kubectl get pods --all-namespaces -o wide
+            # create Fargate profile ml-app -> see https://docs.aws.amazon.com/eks/latest/userguide/fargate-profile.html
+            eksctl create fargateprofile \
+            --cluster ${EKS_CLUSTER_NAME} \
+            --name fargate_profile_ml-app \
+            --namespace ml-app \
+            --region ${AWS_REGION}
+            # verify that profile was created
+            aws eks list-fargate-profiles \
+            --cluster-name ${EKS_CLUSTER_NAME} \
+            --region ${AWS_REGION}
 
   # ToDo
   setup_eks_loadbalancer: 
