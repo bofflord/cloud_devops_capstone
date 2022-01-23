@@ -19,8 +19,11 @@ commands:
           when: on_fail
           command: |
             # TODO: check first if pods are in cluster -> delete namespace & wait until done
+            # kubectl delete namespace ml-app
             # TODO: check if EC2 Loadbalancer exists -> delete loadbalancer & wait until done
+            # 
             # TODO: check if Cluster exists -> delete Cluster & wait until done
+            # eksctl delete cluster --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION}
             # TODO: check if Cloudformation stack exists -> delete cloudformation stacks & wait until done
             aws cloudformation delete-stack \
             --stack-name eksctl-ML-APP-CLUSTER-cluster
@@ -288,8 +291,24 @@ jobs:
             kubectl get ingress/ingress-ml-app -n ml-app
 
   # ToDo
-  # smoketest_app:  
-
+  smoketest_app:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - kubernetes/install
+      - run:
+          name: Create a kubeconfig for Amazon EKS 
+          command: |
+            # manual: -> https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html
+            aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}
+            # check configuration
+            kubectl config view
+      - run:
+          name: get public IP of container from ingress
+          command: |
+            PUBLIC_IP=($(kubectl get ingress/ingress-ml-app -n ml-app | awk '$1=="ingress-ml-app"{print $4}'))
+            
   # ToDo
   # use cloudfront for production container
   # prod_promotion:  

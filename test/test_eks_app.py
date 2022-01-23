@@ -27,7 +27,7 @@ def test_make_prediction():
 
     result = 20.35373177134412
 
-    assert get_prediction('k8s-mlapp-ingressm-42f12f3dc7-343477078.us-east-1.elb.amazonaws.com', '80', parameters) == (result)
+    assert get_prediction('k8s-mlapp-ingressm-c04deca6cb-1513803522.us-east-1.elb.amazonaws.com', '8080', parameters) == (result)
 
 if __name__ == "__main__":
     # load pretrained model as clf
