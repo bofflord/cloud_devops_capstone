@@ -282,10 +282,8 @@ jobs:
             kubectl get all -n ml-app
             # check if deployment has completed
             kubectl -n ml-app rollout status deployment deployment-ml-app
-            # check service detsils
-            kubectl get service/service-ml-app \
-            -n ml-app \
-            |  awk {'print $1" " $2 " " $4 " " $5'} | column -t
+            # check service details
+            kubectl get service/service-ml-app -n ml-app 
             # check ingress status
             kubectl get ingress/ingress-ml-app -n ml-app
 
