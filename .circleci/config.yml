@@ -133,7 +133,7 @@ jobs:
             eksctl create cluster \
             --name ${EKS_CLUSTER_NAME} \
             --region ${AWS_REGION} \
-            --zone ${AWS_REGION}a, ${AWS_REGION}b \
+            --zones ${AWS_REGION}a,${AWS_REGION}b \
             --fargate
             # View Kubernetes resources
             kubectl get nodes -o wide
