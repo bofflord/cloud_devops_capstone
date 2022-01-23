@@ -18,6 +18,10 @@ commands:
           name: Destroy environments
           when: on_fail
           command: |
+            # TODO: check first if pods are in cluster -> delete namespace & wait until done
+            # TODO: check if EC2 Loadbalancer exists -> delete loadbalancer & wait until done
+            # TODO: check if Cluster exists -> delete Cluster & wait until done
+            # TODO: check if Cloudformation stack exists -> delete cloudformation stacks & wait until done
             aws cloudformation delete-stack \
             --stack-name eksctl-ML-APP-CLUSTER-cluster
 jobs:
@@ -273,7 +277,7 @@ jobs:
       - run:
           name: deploy container to Fargate cluster
           command: |
-            kubectl apply -f fargate_deployment.yaml
+            kubectl apply -f fargate_full.yaml
             # list all resources in namespace
             kubectl get all -n ml-app
             # check if deployment has completed
