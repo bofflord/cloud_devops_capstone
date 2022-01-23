@@ -1,7 +1,0 @@
-IP address: localhost
-port number: 8080
-{
-  "prediction": [
-    20.35373177134412
-  ]
-}

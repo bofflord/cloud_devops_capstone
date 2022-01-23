@@ -112,7 +112,6 @@ jobs:
             curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/v0.80.0/eksctl_Linux_amd64.tar.gz" | tar xz -C /tmp
             sudo mv /tmp/eksctl /usr/local/bin
             eksctl version
-
       - run:
           name: created managed Kubernetes cluster via AWS Fargate
           command: |
@@ -138,6 +137,21 @@ jobs:
             --region us-east-1
 
   # ToDo
+  setup_eks_loadbalancer: 
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: install prerequisites
+          command: |
+            # TODO install HELM -> https://www.eksworkshop.com/beginner/060_helm/helm_intro/install/index.html
+      - run:
+          name: install prerequisites
+          command: |
+            # TODO -> https://www.eksworkshop.com/beginner/180_fargate/prerequisites-for-alb/
+
+  # ToDo
   deploy_container: 
     docker:
       - image: amazon/aws-cli
@@ -153,31 +167,31 @@ jobs:
             kubectl apply -f fargate_deployment.yaml
             # list all resources in namespace
             kubectl get all -n ml-app
-      - run:
-          name: create service
-          command: |
-            kubectl apply -f fargate_service.yaml
-            # describe details of service
-            kubectl -n ml-app describe service ml-app-service
-            # view details of pod ml-app-deployment-6c76c467-c5pbd
-            kubectl -n ml-app describe pod ml-app-deployment-6c76c467-c5pbd
-      - run:
-          name: expose deployment of type LoadBalancer
-          command: |
-            # kubectl expose deployment ml-app-deployment \
-            # --type=LoadBalancer \
-            # --name=ml-app-loadbalancer \
-            # -n ml-app
-            kubectl expose deployment ml-app-deployment \
-            --type=NodePort  \
-            --name=ml-app-service-exposed\
-            -n ml-app
-            # get information about service
-            kubectl get service/ml-app-loadbalancer \
-            -n ml-app \
-            |  awk {'print $1" " $2 " " $4 " " $5'} | column -t
-            # list services
-            kubectl get svc -n ml-app
+      # - run:
+      #     name: create service
+      #     command: |
+      #       kubectl apply -f fargate_service.yaml
+      #       # describe details of service
+      #       kubectl -n ml-app describe service ml-app-service
+      #       # view details of pod ml-app-deployment-6c76c467-c5pbd
+      #       kubectl -n ml-app describe pod ml-app-deployment-6c76c467-c5pbd
+      # - run:
+      #     name: expose deployment of type LoadBalancer
+      #     command: |
+      #       # kubectl expose deployment ml-app-deployment \
+      #       # --type=LoadBalancer \
+      #       # --name=ml-app-loadbalancer \
+      #       # -n ml-app
+      #       kubectl expose deployment ml-app-deployment \
+      #       --type=NodePort  \
+      #       --name=ml-app-service-exposed\
+      #       -n ml-app
+      #       # get information about service
+      #       kubectl get service/ml-app-loadbalancer \
+      #       -n ml-app \
+      #       |  awk {'print $1" " $2 " " $4 " " $5'} | column -t
+      #       # list services
+      #       kubectl get svc -n ml-app
 
 
   # ToDo
@@ -263,21 +277,24 @@ workflows:
     jobs:
       - build_app
       # - test_app # optional
-      - build_container
-          requires: [build_app]
+      # - build_container
+      #     requires: [build_app]
       # - scan_container # optional
-      - create_network_infrastructure
-          requires: [build_container] 
-          filters:
-            branches:
-              only: [master]
-      - create_eks_cluster
-          requires: [create_network_infrastructure]
-      - deploy_container
-          requires: [create_eks_cluster]
-      - smoketest_app
-          requires: [deploy_container]
-      - prod_promotion
-          requires: [smoketest_app]
-      - cleanup
-          requires: [prod_promotion]
+
+      # TODO: complete steps
+      # - create_eks_cluster
+      #     requires: [build_app]
+      #     filters:
+      #       branches:
+      #         only: [master]
+      # - create_eks_cluster
+      # - setup_eks_loadbalancer
+      #     requires: [create_eks_cluster]
+      # - deploy_container
+      #     requires: [setup_eks_loadbalancer]
+      # - smoketest_app
+      #     requires: [deploy_container]
+      # - prod_promotion
+      #     requires: [smoketest_app]
+      # - cleanup
+      #     requires: [prod_promotion]

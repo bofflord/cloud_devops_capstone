@@ -1,0 +1,68 @@
+See: https://www.eksworkshop.com/beginner/180_fargate/ingress/
+
+
+ID=TEST2
+eksctl create cluster \
+            --name ${ID}-ML-APP-CLUSTER \
+            --region us-east-1 \
+            --fargate
+
+
+kubectl run ml-app --image=017792502591.dkr.ecr.us-east-1.amazonaws.com/ml_app:latest --port=8080 -n ml-app
+
+
+eksctl utils associate-iam-oidc-provider \
+    --region us-east-1 \
+    --cluster TEST2-ML-APP-CLUSTER \
+    --approve
+
+
+curl -o iam_policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.2.0/docs/install/iam_policy.json
+aws iam create-policy \
+    --policy-name AWSLoadBalancerControllerIAMPolicy \
+    --policy-document file://iam_policy.json --profile privado_sth
+rm iam_policy.json
+
+
+eksctl create iamserviceaccount \
+  --cluster TEST2-ML-APP-CLUSTER \
+  --namespace kube-system \
+  --name aws-load-balancer-controller \
+  --attach-policy-arn arn:aws:iam::017792502591:policy/AWSLoadBalancerControllerIAMPolicy \
+  --override-existing-serviceaccounts \
+  --region us-east-1 \
+  --approve
+
+
+echo 'export LBC_VERSION="v2.3.0"' >>  ~/.bashrc
+.  ~/.bashrc
+
+
+
+helm repo add eks https://aws.github.io/eks-charts
+
+export VPC_ID=$(aws eks describe-cluster \
+                --name TEST2-ML-APP-CLUSTER \
+                --query "cluster.resourcesVpcConfig.vpcId" \
+                --output text\
+                --region us-east-1)
+
+helm upgrade -i aws-load-balancer-controller \
+    eks/aws-load-balancer-controller \
+    -n kube-system \
+    --set clusterName=TEST2-ML-APP-CLUSTER \
+    --set serviceAccount.create=false \
+    --set serviceAccount.name=aws-load-balancer-controller \
+    --set image.tag="${LBC_VERSION}" \
+    --set region=us-east-1 \
+    --set vpcId=vpc-0685c617b1c93010f
+
+
+kubectl -n ml-app rollout status deployment deployment-ml-app
+
+
+kubectl get service/service-ml-app \
+            -n ml-app \
+            |  awk {'print $1" " $2 " " $4 " " $5'} | column -t
+
+kubectl get ingress/ingress-ml-app -n ml-app
