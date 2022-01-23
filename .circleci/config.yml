@@ -65,7 +65,7 @@ jobs:
   # store in AWS image repository -> AWS ECR
   build_container:
     docker:
-      - image: amazon/aws-cli
+      - image: cimg/base:2021.04
     steps:
       - checkout
       - setup_remote_docker:
@@ -75,6 +75,13 @@ jobs:
           name: build docker image
           command: |
             docker build --tag=ml-app-local .
+      - run:
+          name: install dependencies
+          command: |
+            sudo apt-get update
+            sudo apt-get install --upgrade awscli
+            echo 'aws cli version:'
+            aws --version   
       - run:
           name: authenticate and upload docker image to AWS ECR
           command: |
