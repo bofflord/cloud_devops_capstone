@@ -7,6 +7,8 @@ version: 2.1
 orbs: 
   aws-eks: circleci/aws-eks@2.1.0
   kubernetes: circleci/kubernetes@1.0
+  helm: circleci/helm@1.2.0
+
 
 commands:
   # TODO: adapt to project
@@ -119,13 +121,6 @@ jobs:
           command: |
             eksctl version
             kubectl config view
-      # - run:
-      #     name: Install dependencies
-      #     command: |
-      #       # TODO install and start eksctl
-      #       curl --silent --location "https://github.com/weaveworks/eksctl/releases/download/v0.80.0/eksctl_Linux_amd64.tar.gz" | tar xz -C /tmp
-      #       sudo mv /tmp/eksctl /usr/local/bin
-      #       eksctl version
       - run:
           name: created managed Kubernetes cluster via AWS Fargate
           command: |
@@ -158,13 +153,89 @@ jobs:
     steps:
       - checkout
       - run:
-          name: install prerequisites
+          name: Install dependencies
           command: |
-            # TODO install HELM -> https://www.eksworkshop.com/beginner/060_helm/helm_intro/install/index.html
+            # install tar utility
+            yum install -y tar gzip
+      - aws-eks/setup:
+          version: 0.80.0
+      - kubernetes/install
       - run:
-          name: install prerequisites
+          name: check installs
           command: |
-            # TODO -> https://www.eksworkshop.com/beginner/180_fargate/prerequisites-for-alb/
+            helm version
+            eksctl version
+            kubectl config view
+      - run:
+          name: create IAM OIDC provider
+          command: |
+            eksctl utils associate-iam-oidc-provider \
+            --region ${AWS_REGION}
+            --cluster ${EKS_CLUSTER_NAME} \
+            --approve
+      - run:
+          name: create IAM policy
+          command: |
+            curl -o iam_policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.2.0/docs/install/iam_policy.json
+            aws iam create-policy \
+                --policy-name AWSLoadBalancerControllerIAMPolicy \
+                --policy-document file://iam_policy.json
+            rm iam_policy.json
+      - run:
+          name: Create a IAM role and ServiceAccount for the Load Balancer controller
+          command: |
+            eksctl create iamserviceaccount \
+            --cluster ${EKS_CLUSTER_NAME} \
+            --namespace kube-system \
+            --name aws-load-balancer-controller \
+            --attach-policy-arn arn:aws:iam::${AWS_ACCOUNT_ID}:policy/AWSLoadBalancerControllerIAMPolicy \
+            --override-existing-serviceaccounts \
+            --region ${AWS_REGION} \
+            --approve
+      - run:
+          name: Install the TargetGroupBinding CRDs
+          command: |
+            kubectl apply -k "github.com/aws/eks-charts/stable/aws-load-balancer-controller/crds?ref=master"
+      - run:
+          name: Deploy the Helm chart from the Amazon EKS charts repo
+          command: |
+            # verify if AWS Load Balancer version has been set -> https://www.eksworkshop.com/020_prerequisites/k8stools/#set-the-aws-load-balancer-controller-version
+            if [ ! -x ${LBC_VERSION} ]
+              then
+                tput setaf 2; echo '${LBC_VERSION} has been set.'
+              else
+                tput setaf 1;echo '${LBC_VERSION} has NOT been set.'
+            fi
+            # deploy Helm chart
+            helm repo add eks https://aws.github.io/eks-charts
+            export VPC_ID=$(aws eks describe-cluster \
+                            --name ${EKS_CLUSTER_NAME} \
+                            --query "cluster.resourcesVpcConfig.vpcId" \
+                            --region ${AWS_REGION} \
+                            --output text)
+            helm upgrade -i aws-load-balancer-controller \
+                eks/aws-load-balancer-controller \
+                -n kube-system \
+                --set clusterName=${EKS_CLUSTER_NAME} \
+                --set serviceAccount.create=false \
+                --set serviceAccount.name=aws-load-balancer-controller \
+                --set image.tag="${LBC_VERSION}" \
+                --set region=${AWS_REGION} \
+                --set vpcId=${VPC_ID}
+      - run:
+          name: Check if deployment has completed
+          command: |
+            kubectl -n kube-system rollout status deployment aws-load-balancer-controller
+
+      # - run:
+      #     name: install prerequisites
+      #     command: |
+      #       # install HELM -> https://www.eksworkshop.com/beginner/060_helm/helm_intro/install/index.html
+      #       # done via orb
+      # - run:
+      #     name: install prerequisites
+      #     command: |
+      #       # TODO -> https://www.eksworkshop.com/beginner/180_fargate/prerequisites-for-alb/
 
   # ToDo
   deploy_container: 
@@ -290,7 +361,7 @@ jobs:
 workflows:
   default:
     jobs:
-      - create_eks_cluster
+      - setup_eks_loadbalancer
       # - build_app
       # # - test_app # optional
       # - build_container:
