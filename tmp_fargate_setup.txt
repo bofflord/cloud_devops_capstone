@@ -24,6 +24,8 @@ aws iam create-policy \
 rm iam_policy.json
 
 
+aws iam get-policy --policy-arn arn:aws:iam::017792502591:policy/AWSLoadBalancerControllerIAMPolicy
+
 eksctl create iamserviceaccount \
   --cluster TEST2-ML-APP-CLUSTER \
   --namespace kube-system \
