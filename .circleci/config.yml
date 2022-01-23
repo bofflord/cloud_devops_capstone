@@ -278,10 +278,11 @@ jobs:
 workflows:
   default:
     jobs:
-      - build_app
-      # - test_app # optional
-      - build_container:
-          requires: [build_app]
+    - build_container
+      # - build_app
+      # # - test_app # optional
+      # - build_container:
+      #     requires: [build_app]
       # - scan_container # optional
 
       # TODO: complete steps
