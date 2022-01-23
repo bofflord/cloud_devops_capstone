@@ -226,6 +226,7 @@ jobs:
           name: Deploy the Helm chart from the Amazon EKS charts repo
           command: |
             # verify if AWS Load Balancer version has been set -> https://www.eksworkshop.com/020_prerequisites/k8stools/#set-the-aws-load-balancer-controller-version
+            echo "Verifying ALB version..."
             if [ ! -x ${LBC_VERSION} ]
               then
                 tput setaf 2; echo '${LBC_VERSION} has been set.'
@@ -233,12 +234,15 @@ jobs:
                 tput setaf 1;echo '${LBC_VERSION} has NOT been set.'
             fi
             # deploy Helm chart
+            echo "Deploying Helm chart..."
             helm repo add eks https://aws.github.io/eks-charts
+            echo "Exporting VPC ID..."
             export VPC_ID=$(aws eks describe-cluster \
                             --name ${EKS_CLUSTER_NAME} \
                             --query "cluster.resourcesVpcConfig.vpcId" \
                             --region ${AWS_REGION} \
                             --output text)
+            echo "Upgrading ALB via Helm..."
             helm upgrade -i aws-load-balancer-controller \
                 eks/aws-load-balancer-controller \
                 -n kube-system \
