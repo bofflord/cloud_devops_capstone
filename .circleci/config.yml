@@ -277,7 +277,7 @@ workflows:
     jobs:
       - build_app
       # - test_app # optional
-      - build_container
+      - build_container:
           requires: [build_app]
       # - scan_container # optional
 
