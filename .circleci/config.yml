@@ -181,7 +181,7 @@ jobs:
           name: create IAM OIDC provider
           command: |
             eksctl utils associate-iam-oidc-provider \
-            --region ${AWS_REGION}
+            --region ${AWS_REGION} \
             --cluster ${EKS_CLUSTER_NAME} \
             --approve
       - run:
