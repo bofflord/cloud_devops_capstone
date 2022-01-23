@@ -178,6 +178,12 @@ jobs:
             eksctl version
             kubectl config view
       - run:
+          name: Create a kubeconfig for Amazon EKS -> https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html
+          command: |
+            aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}
+            # test configuration
+            kubectl get pods --all-namespaces -o wide
+      - run:
           name: create IAM OIDC provider
           command: |
             eksctl utils associate-iam-oidc-provider \
