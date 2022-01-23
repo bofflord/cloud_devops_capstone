@@ -257,125 +257,33 @@ jobs:
           command: |
             kubectl -n kube-system rollout status deployment aws-load-balancer-controller
 
-      # - run:
-      #     name: install prerequisites
-      #     command: |
-      #       # install HELM -> https://www.eksworkshop.com/beginner/060_helm/helm_intro/install/index.html
-      #       # done via orb
-      # - run:
-      #     name: install prerequisites
-      #     command: |
-      #       # TODO -> https://www.eksworkshop.com/beginner/180_fargate/prerequisites-for-alb/
-
-  # ToDo
   deploy_container: 
     docker:
       - image: amazon/aws-cli
     steps:
       - checkout
+      - kubernetes/install
       - run:
-          name: create namespace
+          name: Create a kubeconfig for Amazon EKS 
           command: |
-            kubectl create namespace ml-app
+            # manual: -> https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html
+            aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}
+            # check configuration
+            kubectl config view
       - run:
           name: deploy container to Fargate cluster
           command: |
             kubectl apply -f fargate_deployment.yaml
             # list all resources in namespace
             kubectl get all -n ml-app
-      # - run:
-      #     name: create service
-      #     command: |
-      #       kubectl apply -f fargate_service.yaml
-      #       # describe details of service
-      #       kubectl -n ml-app describe service ml-app-service
-      #       # view details of pod ml-app-deployment-6c76c467-c5pbd
-      #       kubectl -n ml-app describe pod ml-app-deployment-6c76c467-c5pbd
-      # - run:
-      #     name: expose deployment of type LoadBalancer
-      #     command: |
-      #       # kubectl expose deployment ml-app-deployment \
-      #       # --type=LoadBalancer \
-      #       # --name=ml-app-loadbalancer \
-      #       # -n ml-app
-      #       kubectl expose deployment ml-app-deployment \
-      #       --type=NodePort  \
-      #       --name=ml-app-service-exposed\
-      #       -n ml-app
-      #       # get information about service
-      #       kubectl get service/ml-app-loadbalancer \
-      #       -n ml-app \
-      #       |  awk {'print $1" " $2 " " $4 " " $5'} | column -t
-      #       # list services
-      #       kubectl get svc -n ml-app
-
-
-  # ToDo
-  # create AWS Kubernetes Cluster -> AWS EKS
-  # include circleci id in stack names
-  # create_network_infrastructure:  
-  #   docker:
-  #     - image: amazon/aws-cli
-  #   steps:
-  #     - checkout
-  #     - run:
-  #         name: create VPCs, IAM role and EKS Cluster
-  #         command: |
-  #           ID=${CIRCLE_WORKFLOW_ID:0:7}
-  #           aws cloudformation deploy \
-  #             --template-file infrastructure/eks-vpc-role-cluster.yaml \
-  #             --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM"\
-  #             --tags project=ml-app \
-  #             --stack-name "ml-app-eks-cluster-${ID}" \
-  #             --parameter-overrides \
-  #             ID="${ID}" \
-  #             EKSClusterName="${ID}-ML-APP-CLUSTER" 
-
-  # create_eks_cluster:  
-  #   docker:
-  #     - image: amazon/aws-cli
-  #   steps:
-  #     - checkout
-  #     - run:
-  #         name: create worker node group for EKS Cluster
-  #         command: |
-  #           ID=${CIRCLE_WORKFLOW_ID:0:7}
-  #           aws cloudformation deploy \
-  #             --template-file infrastructure/eks-nodegroup.yaml \
-  #             --capabilities "CAPABILITY_IAM" "CAPABILITY_NAMED_IAM"\
-  #             --tags project=ml-app \
-  #             --stack-name "ml-app-eks-worker-${ID}" \
-  #             --parameter-overrides \
-  #             ID="${ID}" \
-  #             KeyName="EKSworkerKeyPair" \
-  #             ClusterName="${ID}-ML-APP-CLUSTER" \
-  #             NodeGroupName="${ID}-ML-APP-NODEGROUP"
-
-  # ToDo
-  # deploy_container: 
-  #   docker:
-  #     - image: amazon/aws-cli
-  #   steps:
-  #     - checkout
-  #     - run:
-  #         name: Install dependencies
-  #         command: |
-  #           # TODO install and start docker
-  #           yum update -y
-  #           yum install docker -y
-  #           service docker start
-  #     - run: 
-  #         name: create kubeconfig for EKS
-  #         command: |
-  #           ID=${CIRCLE_WORKFLOW_ID:0:7}
-  #           aws eks list-clusters
-  #           aws eks update-kubeconfig --region us-east-1 --name "${ID}-ML-APP-CLUSTER"
-  #           aws get svc
-  #     - run: 
-  #         name: deploy container to EKS Cluster
-  #         command: |
-  #           kubectl apply -f eks_deployment.yaml
-  #           kubectl get deployments
+            # check if deployment has completed
+            kubectl -n ml-app rollout status deployment deployment-ml-app
+            # check service detsils
+            kubectl get service/service-ml-app \
+            -n ml-app \
+            |  awk {'print $1" " $2 " " $4 " " $5'} | column -t
+            # check ingress status
+            kubectl get ingress/ingress-ml-app -n ml-app
 
   # ToDo
   # smoketest_app:  
@@ -391,7 +299,7 @@ jobs:
 workflows:
   default:
     jobs:
-      - setup_eks_loadbalancer
+      - deploy_container
       # - build_app
       # # - test_app # optional
       # - build_container:
