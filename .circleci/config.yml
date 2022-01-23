@@ -85,13 +85,10 @@ jobs:
       - run:
           name: authenticate and upload docker image to AWS ECR
           command: |
-            # Create dockerpath
-            # TODO: handover dockerpath variable instead of hardcording
-            # DOCKERPATH=017792502591.dkr.ecr.us-east-1.amazonaws.com/ml_app:latest
             # to local docker image to central path
             docker image tag ml-app-local:latest $DOCKERPATH
             # Retrieve an authentication token and authenticate your Docker client to your registry.
-            aws ecr get-login-password --region region | docker login --username AWS --password-stdin aws_account_id.dkr.ecr.region.amazonaws.com
+            aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com
             # Push Docker image to AWS ECR repository
             docker push $DOCKERPATH
 
