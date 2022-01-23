@@ -226,12 +226,12 @@ jobs:
           name: Deploy the Helm chart from the Amazon EKS charts repo
           command: |
             # verify if AWS Load Balancer version has been set -> https://www.eksworkshop.com/020_prerequisites/k8stools/#set-the-aws-load-balancer-controller-version
-            echo "Verifying ALB version..."
+            echo "Verifying LBC version..."
             if [ ! -x ${LBC_VERSION} ]
               then
-                tput setaf 2; echo '${LBC_VERSION} has been set.'
+                echo 'LBC_VERSION ${LBC_VERSION} has been set.'
               else
-                tput setaf 1;echo '${LBC_VERSION} has NOT been set.'
+                echo 'LBC_VERSION has NOT been set.'
             fi
             # deploy Helm chart
             echo "Deploying Helm chart..."
