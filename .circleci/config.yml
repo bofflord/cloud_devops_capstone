@@ -156,6 +156,8 @@ jobs:
           command: |
             # install tar utility
             yum install -y tar gzip
+            # install openssl
+            yum install -y openssl
       - aws-eks/setup:
           version: 0.80.0
       - kubernetes/install
