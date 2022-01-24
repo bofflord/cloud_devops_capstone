@@ -319,7 +319,7 @@ jobs:
       - run:
           name: install jq for JSON parsing 
           command: |
-            sudo yum install jq -y
+            yum install jq -y
             jq -Version
       - run:
           name: get public IP of container from ingress and run run smoketest
