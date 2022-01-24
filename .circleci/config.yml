@@ -322,7 +322,7 @@ jobs:
             yum install jq -y
             jq -Version
       - run:
-          name: get public IP of container from ingress and run run smoketest
+          name: get public IP of container from ingress and run smoketest
           command: |
             PUBLIC_IP=($(kubectl get ingress/ingress-ml-app -n ml-app | awk '$1=="ingress-ml-app"{print $4}'))
             cd test
