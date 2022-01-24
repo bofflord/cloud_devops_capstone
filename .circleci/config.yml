@@ -326,7 +326,7 @@ jobs:
           command: |
             PUBLIC_IP=($(kubectl get ingress/ingress-ml-app -n ml-app | awk '$1=="ingress-ml-app"{print $4}'))
             cd test
-            . smoketest.sh ${PUBLIC_IP} 8080
+            . smoketest.sh ${PUBLIC_IP} 80
             
   # ToDo
   # use cloudfront for production container
