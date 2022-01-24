@@ -152,6 +152,12 @@ jobs:
             kubectl get nodes -o wide
             # View the workloads running on the cluster
             kubectl get pods --all-namespaces -o wide
+      - run:
+          name: workflow ID specific fargate_profile
+          command: |
+            TODO: combine fargate_profile with CircleCI ID!
+            # TODO: extract step into separate job
+            # TODO: include CircleCI ID in namespace
             # create Fargate profile ml-app -> see https://docs.aws.amazon.com/eks/latest/userguide/fargate-profile.html
             eksctl create fargateprofile \
             --cluster ${EKS_CLUSTER_NAME} \
@@ -330,7 +336,29 @@ jobs:
             
   # ToDo
   # use cloudfront for production container
-  # prod_promotion:  
+  prod_promotion:  
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - kubernetes/install
+      - run:
+          name: Create a kubeconfig for Amazon EKS 
+          command: |
+            # manual: -> https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html
+            aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER_NAME}
+            # check configuration
+            kubectl config view
+      - run:
+          name: update cloudfront distribution
+          command: |
+            PUBLIC_IP=($(kubectl get ingress/ingress-ml-app -n ml-app | awk '$1=="ingress-ml-app"{print $4}'))
+            aws cloudformation deploy \
+            --template-file infrastructure/cloudfront.yml \
+            --stack-name CloudFrontStack \
+            --parameter-overrides PublicIP=${PUBLIC_IP} \
+            --tags project=ml-app
+            
 
   # ToDo
   # delete no longer required resources
@@ -340,7 +368,7 @@ workflows:
   default:
     jobs:
       # Testing
-      - smoketest_app
+      - prod_promotion
 
       # - build_app
       # # - test_app # optional
