@@ -1,0 +1,30 @@
+Description: >
+  Cloudfront distribution for ML App.
+
+Parameters:
+  PublicIP:
+    Description: Unique identifier.
+    Type: String
+
+
+Resources:
+  
+  WebpageCDN:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - DomainName: !Sub "udapeople-${PublicIP}.s3.amazonaws.com"
+            Id: ml-app-api
+            CustomOriginConfig:
+              - HTTPPort: 80
+              - HTTPPort: 80
+              - OriginProtocolPolicy: match-viewer
+        Enabled: True
+
+Outputs:
+  PublicIP:
+    Value: !Sub ${PublicIP}
+    Description: URL for ML app API
+    Export:
+      Name: PublicIP
