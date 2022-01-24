@@ -22,6 +22,16 @@ Resources:
               OriginProtocolPolicy: match-viewer
         Enabled: True
         DefaultCacheBehavior:
+          AllowedMethods:
+          - DELETE
+          - GET
+          - HEAD
+          - OPTIONS
+          - PATCH
+          - POST
+          - PUT
+          ForwardedValues:
+            QueryString: False
           TargetOriginId: ml-app-api
           ViewerProtocolPolicy: allow-all
 
