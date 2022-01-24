@@ -18,12 +18,10 @@ Resources:
             Id: ml-app-api
             CustomOriginConfig:
               HTTPPort: 80
-              HTTPPort: 80
+              HTTPSPort: 80
               OriginProtocolPolicy: match-viewer
         Enabled: True
         DefaultCacheBehavior:
-          ForwardedValues:
-            QueryString: False
           TargetOriginId: ml-app-api
           ViewerProtocolPolicy: allow-all
 
