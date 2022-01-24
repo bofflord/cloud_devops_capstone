@@ -320,23 +320,21 @@ jobs:
 workflows:
   default:
     jobs:
-      - deploy_container
-      # - build_app
-      # # - test_app # optional
-      # - build_container:
-      #     requires: [build_app]
+      # - deploy_container
+      - build_app
+      # - test_app # optional
+      - build_container:
+          requires: [build_app]
       # - scan_container # optional
-
-      # TODO: complete steps
-      # - create_eks_cluster:
-      #     requires: [build_app]
-      #     filters:
-      #       branches:
-      #         only: [master]
-      # - setup_eks_loadbalancer:
-      #     requires: [create_eks_cluster]
-      # - deploy_container:
-      #     requires: [setup_eks_loadbalancer]
+      - create_eks_cluster:
+          requires: [build_app]
+          filters:
+            branches:
+              only: [master]
+      - setup_eks_loadbalancer:
+          requires: [create_eks_cluster]
+      - deploy_container:
+          requires: [setup_eks_loadbalancer]
       # - smoketest_app:
       #     requires: [deploy_container]
       # - prod_promotion:
