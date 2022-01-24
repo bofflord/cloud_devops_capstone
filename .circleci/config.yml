@@ -353,6 +353,7 @@ jobs:
           name: update cloudfront distribution
           command: |
             PUBLIC_IP=($(kubectl get ingress/ingress-ml-app -n ml-app | awk '$1=="ingress-ml-app"{print $4}'))
+            echo "PUBLIC_IP: ${PUBLIC_IP}""
             aws cloudformation deploy \
             --template-file infrastructure/cloudfront.yml \
             --stack-name CloudFrontStack \
