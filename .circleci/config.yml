@@ -21,6 +21,18 @@ commands:
             # TODO: check first if pods are in cluster -> delete namespace & wait until done
             # kubectl delete namespace ml-app
             # TODO: check if EC2 Loadbalancer exists -> delete loadbalancer & wait until done
+            # TODO: check if security group for Cluster exists -> delete security group
+            CLUSTER_SG=aws ec2 describe-security-groups \
+            --region ${AWS_REGION} \
+            --filters Name=tag:Name,Values=${EKS_CLUSTER_NAME} \
+            --query "SecurityGroups[*].{ID:GroupId}" \
+            --output text
+            if [ -z "$CLUSTER_SG" ]
+            then
+                  echo "\$CLUSTER_SG is NULL"
+            else
+                  echo "Deleting \$CLUSTER_SG ${CLUSTER_SG}..."; aws ec2 delete-security-group ${CLUSTER_SG}
+            fi
             # 
             # TODO: check if Cluster exists -> delete Cluster & wait until done
             # eksctl delete cluster --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION}
@@ -305,9 +317,16 @@ jobs:
             # check configuration
             kubectl config view
       - run:
-          name: get public IP of container from ingress
+          name: install jq for JSON parsing 
+          command: |
+            sudo yum install jq -y
+            jq -Version
+      - run:
+          name: get public IP of container from ingress and run run smoketest
           command: |
             PUBLIC_IP=($(kubectl get ingress/ingress-ml-app -n ml-app | awk '$1=="ingress-ml-app"{print $4}'))
+            cd test
+            . smoketest.sh ${PUBLIC_IP} 80
             
   # ToDo
   # use cloudfront for production container
@@ -320,21 +339,23 @@ jobs:
 workflows:
   default:
     jobs:
-      # - deploy_container
-      - build_app
-      # - test_app # optional
-      - build_container:
-          requires: [build_app]
-      # - scan_container # optional
-      - create_eks_cluster:
-          requires: [build_app]
-          filters:
-            branches:
-              only: [master]
-      - setup_eks_loadbalancer:
-          requires: [create_eks_cluster]
-      - deploy_container:
-          requires: [setup_eks_loadbalancer]
+      # Testing
+      - smoketest_app
+
+      # - build_app
+      # # - test_app # optional
+      # - build_container:
+      #     requires: [build_app]
+      # # - scan_container # optional
+      # - create_eks_cluster:
+      #     requires: [build_app]
+      #     filters:
+      #       branches:
+      #         only: [master]
+      # - setup_eks_loadbalancer:
+      #     requires: [create_eks_cluster]
+      # - deploy_container:
+      #     requires: [setup_eks_loadbalancer]
       # - smoketest_app:
       #     requires: [deploy_container]
       # - prod_promotion:

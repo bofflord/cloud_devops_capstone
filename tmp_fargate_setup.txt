@@ -68,3 +68,48 @@ kubectl get service/service-ml-app \
             |  awk {'print $1" " $2 " " $4 " " $5'} | column -t
 
 kubectl get ingress/ingress-ml-app -n ml-app
+
+vpc-07b3d88da2c55480a
+
+"Tags": [
+                {
+                    "Key": "aws:cloudformation:logical-id",
+                    "Value": "InstanceSecurityGroup"
+                },
+                {
+                    "Key": "Name",
+                    "Value": "aws-cloud9-ud-clouddevops-1dd8c50a6aa4434fbd21bd335c9597b9"
+                },
+                {
+                    "Key": "aws:cloud9:environment",
+                    "Value": "1dd8c50a6aa4434fbd21bd335c9597b9"
+                },
+                {
+                    "Key": "aws:cloudformation:stack-id",
+                    "Value": "arn:aws:cloudformation:us-east-1:017792502591:stack/aws-cloud9-ud-clouddevops-1dd8c50a6aa4434fbd21bd335c9597b9/b796bdb0-708a-11ec-864d-0ecb58536e5d"
+                },
+                {
+                    "Key": "aws:cloud9:owner",
+                    "Value": "AIDAQIJEEBM7TKQYR66I4"
+                },
+                {
+                    "Key": "aws:cloudformation:stack-name",
+                    "Value": "aws-cloud9-ud-clouddevops-1dd8c50a6aa4434fbd21bd335c9597b9"
+                }
+            ],
+
+aws ec2 describe-security-groups \
+ --region us-east-1 \
+ --filters Name=tag:Name,Values=aws-cloud9-ud-clouddevops-1dd8c50a6aa4434fbd21bd335c9597b9 \
+ --query "SecurityGroups[*].{ID:GroupId}" \
+ --output text \
+ --profile privado_sth
+
+{ # try
+
+    python &&
+    #save your output
+
+} || { # catch
+    # save log for exception 
+}
