@@ -14,7 +14,7 @@ Resources:
     Properties:
       DistributionConfig:
         Origins:
-          - DomainName: !Sub "udapeople-${PublicIP}.s3.amazonaws.com"
+          - DomainName: !Sub "${PublicIP}"
             Id: ml-app-api
             CustomOriginConfig:
               HTTPPort: 80
