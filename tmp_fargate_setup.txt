@@ -128,3 +128,6 @@ aws ec2 describe-instances --filters 'Name=vpc-id,Values='$vpc | grep InstanceId
 aws ec2 describe-vpn-connections --filters 'Name=vpc-id,Values='$vpc | grep VpnConnectionId
 aws ec2 describe-vpn-gateways --filters 'Name=attachment.vpc-id,Values='$vpc | grep VpnGatewayId
 aws ec2 describe-network-interfaces --filters 'Name=vpc-id,Values='$vpc | grep NetworkInterfaceId
+
+
+cat tmp_test.yml | sed "s/{{WORKFLOW_ID}}/${WORKFLOW_ID}/g"
