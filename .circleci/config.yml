@@ -302,9 +302,6 @@ jobs:
             eksctl version
             kubectl config view
       - run:
-          name: created managed Kubernetes cluster via AWS Fargate
-          command: |
-      - run:
           name: workflow ID specific fargate_profile
           command: |
             # create Fargate profile ml-app -> see https://docs.aws.amazon.com/eks/latest/userguide/fargate-profile.html
@@ -397,10 +394,53 @@ jobs:
             --parameter-overrides PublicIP=${PUBLIC_IP} \
             --tags project=ml-app-${CIRCLE_WORKFLOW_ID:0:7}
             
-
   # ToDo
   # delete no longer required resources
-  # cleanup:  
+  cleanup:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            # install tar utility
+            yum install -y tar gzip
+      - aws-eks/setup:
+          version: 0.80.0
+      - kubernetes/install
+      - run:
+          name: check installs
+          command: |
+            eksctl version
+            kubectl config view
+      - run:
+          name: Get old Fargate profile workflow id, remove old Fargate profile
+          command: |
+            echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
+            # Fetch the fargate profiles
+            # TODO: check query          
+            PROFILES=($(aws eks list-fargate-profiles \
+            --cluster-name ${EKS_CLUSTER_NAME} \
+            --region ${AWS_REGION} \
+            --no-paginate \
+            --output text))
+            echo profile names: "${PROFILES[@]}"
+            
+            for PROFILE in "${PROFILES[@]}"
+            do
+              OldWorkflowID=${PROFILE: -7}
+              echo OldWorkflowID: "${OldWorkflowID}"
+              if [[ "${OldWorkflowID}" != "${CIRCLE_WORKFLOW_ID:0:7}" ]]
+              then
+                echo removing AWS Fargate profile of OldWorkflowID: "${OldWorkflowID}"
+                eksctl delete fargateprofile \
+                --name fargate_profile_ml-app-${OldWorkflowID} \
+                --cluster ${EKS_CLUSTER_NAME}
+              else
+                echo '----------------- no old resources found -----------------'
+              fi
+            done  
 
 workflows:
   default:
@@ -408,18 +448,18 @@ workflows:
       # Testing
       # - prod_promotion
 
-      - build_app
-      # - test_app # optional
-      - build_container:
-          requires: [build_app]
-      # - scan_container # optional
-      - create_eks_cluster:
-          requires: [build_app]
-          filters:
-            branches:
-              only: [master]
-      - setup_eks_loadbalancer:
-          requires: [create_eks_cluster]
+      # - build_app
+      # # - test_app # optional
+      # - build_container:
+      #     requires: [build_app]
+      # # - scan_container # optional
+      # - create_eks_cluster:
+      #     requires: [build_app]
+      #     filters:
+      #       branches:
+      #         only: [master]
+      # - setup_eks_loadbalancer:
+      #     requires: [create_eks_cluster]
       - create_fargate_profile:
           requires: [setup_eks_loadbalancer]
       - deploy_container:
