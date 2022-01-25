@@ -137,3 +137,61 @@ aws eks update-kubeconfig --region us-east-1 --name ML-APP-CLUSTER --profile pri
 eksctl delete fargateprofile \
                 --name fargate_profile_ml-app-657cc2f \
                 --cluster ML-APP-CLUSTER --region us-east-1
+
+EKS_CLUSTER_NAME=ML-APP-CLUSTER
+AWS_REGION=us-east-1
+aws eks list-fargate-profiles \
+            --cluster-name ${EKS_CLUSTER_NAME} \
+            --region ${AWS_REGION}
+
+            PROFILES=($(aws eks list-fargate-profiles \
+            --cluster-name ${EKS_CLUSTER_NAME} \
+            --region ${AWS_REGION} \
+            --output text))
+            echo profile names: "${PROFILES[@]}"
+
+            PROFILES=($(aws eks list-fargate-profiles \
+            --cluster-name ${EKS_CLUSTER_NAME} \
+            --region ${AWS_REGION} \
+            --no-paginate \
+            --output text | awk '{print $2}'))
+            PROFILES=(${PROFILES[@]/fp-default})
+            echo profile names: "${PROFILES[@]}"
+
+{
+    "DistributionList": {
+        "Marker": "",
+        "MaxItems": 100,
+        "IsTruncated": false,
+        "Quantity": 1,
+        "Items": [
+            {
+                "Id": "E1XA8VRV2YZ49H",
+                "ARN": "arn:aws:cloudfront::017792502591:distribution/E1XA8VRV2YZ49H",
+                "Status": "Deployed",
+                "LastModifiedTime": "2022-01-25T19:49:44.541000+00:00",
+                "DomainName": "d22nmbtj7nca8q.cloudfront.net",
+                "Aliases": {
+                    "Quantity": 0
+                },
+                "Origins": {
+                    "Quantity": 1,
+                    "Items": [
+                        {
+                            "Id": "ml-app-api",
+                            "DomainName": "k8s-mlapp3f5-ingressm-a489c71708-945884218.us-east-1.elb.amazonaws.com",
+                            "OriginPath": "",
+                        }
+                    ]
+                },
+
+aws cloudfront list-distributions \ 
+--query "DistributionList[*].Items[*].DomainName" \
+--profile privado_sth
+
+--query "DistributionList.Items[].{DomainName: DomainName, OriginDomainName: Origins.Items[0].DomainName}[?contains(OriginDomainName, 'example1.com')] | [0]"
+--query "DistributionList.Items[].{DomainName: DomainName, Id: Origins.Items[0].Id}[?contains(Id, 'ml-app-api')] | [0]"
+
+aws cloudfront list-distributions --query "DistributionList.Items[].{DomainName: DomainName, Id: Origins.Items[0].Id}[?contains(Id, 'ml-app-api')] | [0]" --output text
+
+($(aws cloudfront list-distributions --query "DistributionList.Items[].{DomainName: DomainName, Id: Origins.Items[0].Id}[?contains(Id, 'ml-app-api')] | [0]"))[0]

@@ -394,6 +394,8 @@ jobs:
             --stack-name CloudFrontStack \
             --parameter-overrides PublicIP=${PUBLIC_IP} \
             --tags project=ml-app-${CIRCLE_WORKFLOW_ID:0:7}
+            echo "Domain name and of ML-APP Cloudfront distribution:"
+            aws cloudfront list-distributions --query "DistributionList.Items[].{DomainName: DomainName, Id: Origins.Items[0].Id}[?contains(Id, 'ml-app-api')] | [0]" --output text
             
   # ToDo
   # delete no longer required resources
@@ -420,14 +422,14 @@ jobs:
           command: |
             echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
             # Fetch the fargate profiles
-            # TODO: check query          
             PROFILES=($(aws eks list-fargate-profiles \
             --cluster-name ${EKS_CLUSTER_NAME} \
             --region ${AWS_REGION} \
             --no-paginate \
-            --output text))
+            --output text | awk '{print $2}'))
+            # remove default profile from list
+            PROFILES=(${PROFILES[@]/fp-default})
             echo profile names: "${PROFILES[@]}"
-            
             for PROFILE in "${PROFILES[@]}"
             do
               OldWorkflowID=${PROFILE: -7}
@@ -470,5 +472,5 @@ workflows:
           requires: [deploy_container]
       - prod_promotion:
           requires: [smoketest_app]
-      # - cleanup:
-      #     requires: [prod_promotion]
+      - cleanup:
+          requires: [prod_promotion]
