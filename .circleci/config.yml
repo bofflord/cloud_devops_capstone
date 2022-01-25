@@ -333,7 +333,7 @@ jobs:
           name: deploy container to Fargate cluster
           command: |
             # kubectl apply -f fargate_full.yaml
-            fargate_full.yaml | sed "s/{{WORKFLOW_ID}}/${CIRCLE_WORKFLOW_ID:0:7}/g" | kubectl apply -f
+            kubectl apply -f | fargate_full.yaml | sed "s/{{WORKFLOW_ID}}/${CIRCLE_WORKFLOW_ID:0:7}/g" 
             # list all resources in namespace
             kubectl get all -n ml-app-${CIRCLE_WORKFLOW_ID:0:7}
             # check if deployment has completed
