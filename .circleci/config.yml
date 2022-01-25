@@ -447,7 +447,7 @@ workflows:
   default:
     jobs:
       # Testing
-      - create_fargate_profile
+      - deploy_container
 
       # - build_app
       # # - test_app # optional
@@ -463,8 +463,8 @@ workflows:
       #     requires: [create_eks_cluster]
       # - create_fargate_profile:
       #     requires: [setup_eks_loadbalancer]
-      - deploy_container:
-          requires: [create_fargate_profile]
+      # - deploy_container:
+      #     requires: [create_fargate_profile]
       - smoketest_app:
           requires: [deploy_container]
       - prod_promotion:
