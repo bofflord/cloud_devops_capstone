@@ -131,3 +131,9 @@ aws ec2 describe-network-interfaces --filters 'Name=vpc-id,Values='$vpc | grep N
 
 
 cat tmp_test.yml | sed "s/{{WORKFLOW_ID}}/${WORKFLOW_ID}/g"
+
+aws eks update-kubeconfig --region us-east-1 --name ML-APP-CLUSTER --profile privado_sth
+
+eksctl delete fargateprofile \
+                --name fargate_profile_ml-app-657cc2f \
+                --cluster ML-APP-CLUSTER --region us-east-1

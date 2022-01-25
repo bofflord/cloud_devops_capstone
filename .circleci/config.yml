@@ -437,7 +437,8 @@ jobs:
                 echo removing AWS Fargate profile of OldWorkflowID: "${OldWorkflowID}"
                 eksctl delete fargateprofile \
                 --name fargate_profile_ml-app-${OldWorkflowID} \
-                --cluster ${EKS_CLUSTER_NAME}
+                --cluster ${EKS_CLUSTER_NAME} \
+                --region ${AWS_REGION}
               else
                 echo '----------------- no old resources found -----------------'
               fi
@@ -447,7 +448,7 @@ workflows:
   default:
     jobs:
       # Testing
-      - deploy_container
+      - create_fargate_profile
 
       # - build_app
       # # - test_app # optional
@@ -463,8 +464,8 @@ workflows:
       #     requires: [create_eks_cluster]
       # - create_fargate_profile:
       #     requires: [setup_eks_loadbalancer]
-      # - deploy_container:
-      #     requires: [create_fargate_profile]
+      - deploy_container:
+          requires: [create_fargate_profile]
       - smoketest_app:
           requires: [deploy_container]
       - prod_promotion:
