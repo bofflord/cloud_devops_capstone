@@ -152,22 +152,22 @@ jobs:
             kubectl get nodes -o wide
             # View the workloads running on the cluster
             kubectl get pods --all-namespaces -o wide
-      - run:
-          name: workflow ID specific fargate_profile
-          command: |
-            TODO: combine fargate_profile with CircleCI ID!
-            # TODO: extract step into separate job
-            # TODO: include CircleCI ID in namespace
-            # create Fargate profile ml-app -> see https://docs.aws.amazon.com/eks/latest/userguide/fargate-profile.html
-            eksctl create fargateprofile \
-            --cluster ${EKS_CLUSTER_NAME} \
-            --name fargate_profile_ml-app \
-            --namespace ml-app \
-            --region ${AWS_REGION}
-            # verify that profile was created
-            aws eks list-fargate-profiles \
-            --cluster-name ${EKS_CLUSTER_NAME} \
-            --region ${AWS_REGION}
+      # - run:
+      #     name: workflow ID specific fargate_profile
+      #     command: |
+      #       TODO: combine fargate_profile with CircleCI ID!
+      #       # TODO: extract step into separate job
+      #       # TODO: include CircleCI ID in namespace
+      #       # create Fargate profile ml-app -> see https://docs.aws.amazon.com/eks/latest/userguide/fargate-profile.html
+      #       eksctl create fargateprofile \
+      #       --cluster ${EKS_CLUSTER_NAME} \
+      #       --name fargate_profile_ml-app \
+      #       --namespace ml-app \
+      #       --region ${AWS_REGION}
+      #       # verify that profile was created
+      #       aws eks list-fargate-profiles \
+      #       --cluster-name ${EKS_CLUSTER_NAME} \
+      #       --region ${AWS_REGION}
       - destroy-eks-cluster-stack
 
   # ToDo
@@ -282,6 +282,43 @@ jobs:
           command: |
             kubectl -n kube-system rollout status deployment aws-load-balancer-controller
 
+  create_fargate_profile:
+    # "${CIRCLE_WORKFLOW_ID:0:7}"  
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            # install tar utility
+            yum install -y tar gzip
+      - aws-eks/setup:
+          version: 0.80.0
+      - kubernetes/install
+      - run:
+          name: check installs
+          command: |
+            eksctl version
+            kubectl config view
+      - run:
+          name: created managed Kubernetes cluster via AWS Fargate
+          command: |
+      - run:
+          name: workflow ID specific fargate_profile
+          command: |
+            # create Fargate profile ml-app -> see https://docs.aws.amazon.com/eks/latest/userguide/fargate-profile.html
+            eksctl create fargateprofile \
+            --cluster ${EKS_CLUSTER_NAME} \
+            --name fargate_profile_ml-app-${CIRCLE_WORKFLOW_ID:0:7} \
+            --namespace ml-app-${CIRCLE_WORKFLOW_ID:0:7} \
+            --region ${AWS_REGION}
+            # verify that profile was created
+            aws eks list-fargate-profiles \
+            --cluster-name ${EKS_CLUSTER_NAME} \
+            --region ${AWS_REGION}
+
+
   deploy_container: 
     docker:
       - image: amazon/aws-cli
@@ -300,13 +337,13 @@ jobs:
           command: |
             kubectl apply -f fargate_full.yaml
             # list all resources in namespace
-            kubectl get all -n ml-app
+            kubectl get all -n ml-app-${CIRCLE_WORKFLOW_ID:0:7}
             # check if deployment has completed
-            kubectl -n ml-app rollout status deployment deployment-ml-app
+            kubectl -n ml-app-${CIRCLE_WORKFLOW_ID:0:7} rollout status deployment deployment-ml-app
             # check service details
-            kubectl get service/service-ml-app -n ml-app 
+            kubectl get service/service-ml-app -n ml-app-${CIRCLE_WORKFLOW_ID:0:7} 
             # check ingress status
-            kubectl get ingress/ingress-ml-app -n ml-app
+            kubectl get ingress/ingress-ml-app -n ml-app-${CIRCLE_WORKFLOW_ID:0:7}
 
   # ToDo
   smoketest_app:
@@ -330,7 +367,7 @@ jobs:
       - run:
           name: get public IP of container from ingress and run smoketest
           command: |
-            PUBLIC_IP=($(kubectl get ingress/ingress-ml-app -n ml-app | awk '$1=="ingress-ml-app"{print $4}'))
+            PUBLIC_IP=($(kubectl get ingress/ingress-ml-app -n ml-app-${CIRCLE_WORKFLOW_ID:0:7} | awk '$1=="ingress-ml-app"{print $4}'))
             cd test
             . smoketest.sh ${PUBLIC_IP} 80
             
@@ -352,13 +389,13 @@ jobs:
       - run:
           name: update cloudfront distribution
           command: |
-            PUBLIC_IP=($(kubectl get ingress/ingress-ml-app -n ml-app | awk '$1=="ingress-ml-app"{print $4}'))
+            PUBLIC_IP=($(kubectl get ingress/ingress-ml-app -n ml-app-${CIRCLE_WORKFLOW_ID:0:7} | awk '$1=="ingress-ml-app"{print $4}'))
             echo "PUBLIC_IP: ${PUBLIC_IP}"
             aws cloudformation deploy \
             --template-file infrastructure/cloudfront.yml \
             --stack-name CloudFrontStack \
             --parameter-overrides PublicIP=${PUBLIC_IP} \
-            --tags project=ml-app
+            --tags project=ml-app-${CIRCLE_WORKFLOW_ID:0:7}
             
 
   # ToDo
@@ -369,25 +406,27 @@ workflows:
   default:
     jobs:
       # Testing
-      - prod_promotion
+      # - prod_promotion
 
-      # - build_app
-      # # - test_app # optional
-      # - build_container:
-      #     requires: [build_app]
-      # # - scan_container # optional
-      # - create_eks_cluster:
-      #     requires: [build_app]
-      #     filters:
-      #       branches:
-      #         only: [master]
-      # - setup_eks_loadbalancer:
-      #     requires: [create_eks_cluster]
-      # - deploy_container:
-      #     requires: [setup_eks_loadbalancer]
-      # - smoketest_app:
-      #     requires: [deploy_container]
-      # - prod_promotion:
-      #     requires: [smoketest_app]
+      - build_app
+      # - test_app # optional
+      - build_container:
+          requires: [build_app]
+      # - scan_container # optional
+      - create_eks_cluster:
+          requires: [build_app]
+          filters:
+            branches:
+              only: [master]
+      - setup_eks_loadbalancer:
+          requires: [create_eks_cluster]
+      - create_fargate_profile:
+          requires: [setup_eks_loadbalancer]
+      - deploy_container:
+          requires: [create_fargate_profile]
+      - smoketest_app:
+          requires: [deploy_container]
+      - prod_promotion:
+          requires: [smoketest_app]
       # - cleanup:
       #     requires: [prod_promotion]
