@@ -466,11 +466,8 @@ workflows:
           requires: [create_eks_cluster]
       - create_fargate_profile:
           requires: [setup_eks_loadbalancer]
-      # - deploy_container:
-      #     requires: [create_fargate_profile, build_container]
-      # TODO revert back to upper prerequisites
       - deploy_container:
-          requires: [create_fargate_profile]
+          requires: [create_fargate_profile, build_container]
       - smoketest_app:
           requires: [deploy_container]
       - prod_promotion:
