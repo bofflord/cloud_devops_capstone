@@ -195,3 +195,10 @@ aws cloudfront list-distributions \
 aws cloudfront list-distributions --query "DistributionList.Items[].{DomainName: DomainName, Id: Origins.Items[0].Id}[?contains(Id, 'ml-app-api')] | [0]" --output text
 
 ($(aws cloudfront list-distributions --query "DistributionList.Items[].{DomainName: DomainName, Id: Origins.Items[0].Id}[?contains(Id, 'ml-app-api')] | [0]"))[0]
+
+fargate_profile_ml-app-ab22dfc
+
+eksctl delete fargateprofile \
+                --name fargate_profile_ml-app-ab25d08 \
+                --cluster ${EKS_CLUSTER_NAME} \
+                --region ${AWS_REGION}
