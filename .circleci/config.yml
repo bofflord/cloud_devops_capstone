@@ -145,7 +145,7 @@ jobs:
             CLUSTERS=($(aws eks list-clusters --query "clusters" --output text))
             if [[ ! " ${CLUSTERS[@]} " =~ " ${EKS_CLUSTER_NAME} " ]]
             then
-              echo "Creating EKS Fargate cluster...""
+              echo "Creating EKS Fargate cluster..."
               # create managed cluster on AWS Fargate
               eksctl create cluster \
               --name ${EKS_CLUSTER_NAME} \
@@ -159,23 +159,7 @@ jobs:
             kubectl get nodes -o wide
             # View the workloads running on the cluster
             kubectl get pods --all-namespaces -o wide
-      # - run:
-      #     name: workflow ID specific fargate_profile
-      #     command: |
-      #       TODO: combine fargate_profile with CircleCI ID!
-      #       # TODO: extract step into separate job
-      #       # TODO: include CircleCI ID in namespace
-      #       # create Fargate profile ml-app -> see https://docs.aws.amazon.com/eks/latest/userguide/fargate-profile.html
-      #       eksctl create fargateprofile \
-      #       --cluster ${EKS_CLUSTER_NAME} \
-      #       --name fargate_profile_ml-app \
-      #       --namespace ml-app \
-      #       --region ${AWS_REGION}
-      #       # verify that profile was created
-      #       aws eks list-fargate-profiles \
-      #       --cluster-name ${EKS_CLUSTER_NAME} \
-      #       --region ${AWS_REGION}
-      - destroy-eks-cluster-stack
+      # - destroy-eks-cluster-stack
 
   # ToDo
   setup_eks_loadbalancer: 
