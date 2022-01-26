@@ -69,4 +69,5 @@ def predict():
 if __name__ == "__main__":
     # load pretrained model as clf
     clf = joblib.load("./model_data/boston_housing_prediction.joblib")
-    app.run(host='0.0.0.0', port=8080, debug=True) # specify port=8080
+    app.run(host='0.0.0.0', 
+    port=8080, debug=True) # specify port=8080
