@@ -87,6 +87,7 @@ jobs:
   build_container:
     docker:
       - image: cimg/base:2021.04
+    machine: true
     steps:
       - checkout
       # - setup_remote_docker:
