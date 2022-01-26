@@ -389,7 +389,7 @@ jobs:
             --tags project=ml-app-${CIRCLE_WORKFLOW_ID:0:7}
             echo "Domain name and of ML-APP Cloudfront distribution:"
             aws cloudfront list-distributions --query "DistributionList.Items[].{DomainName: DomainName, Id: Origins.Items[0].Id}[?contains(Id, 'ml-app-api')] | [0]" --output text
-        - run:
+      - run:
           name: delete cloudfront stack on fail
           when: on_fail
           command: |
