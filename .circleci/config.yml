@@ -443,27 +443,30 @@ workflows:
   default:
     jobs:
       # Testing
-      - build_container
+      # - build_container
 
-      # - build_app
-      # # - test_app # optional
-      # - build_container:
-      #     requires: [build_app]
-      # # - scan_container # optional
-      # - create_eks_cluster:
-      #     requires: [build_container]
-      #     filters:
-      #       branches:
-      #         only: [master]
-      # - setup_eks_loadbalancer:
-      #     requires: [create_eks_cluster]
-      # - create_fargate_profile:
-      #     requires: [setup_eks_loadbalancer]
+      - build_app
+      # - test_app # optional
+      - build_container:
+          requires: [build_app]
+      # - scan_container # optional
+      - create_eks_cluster:
+          requires: [build_container]
+          filters:
+            branches:
+              only: [master]
+      - setup_eks_loadbalancer:
+          requires: [create_eks_cluster]
+      - create_fargate_profile:
+          requires: [setup_eks_loadbalancer]
       # - deploy_container:
       #     requires: [create_fargate_profile, build_container]
-      # - smoketest_app:
-      #     requires: [deploy_container]
-      # - prod_promotion:
-      #     requires: [smoketest_app]
-      # - cleanup:
-      #     requires: [prod_promotion]
+      # TODO revert back to upper prerequisites
+      - deploy_container:
+          requires: [create_fargate_profile]
+      - smoketest_app:
+          requires: [deploy_container]
+      - prod_promotion:
+          requires: [smoketest_app]
+      - cleanup:
+          requires: [prod_promotion]
