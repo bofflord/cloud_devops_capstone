@@ -439,8 +439,10 @@ jobs:
                 --name fargate_profile_ml-app-${OldWorkflowID} \
                 --cluster ${EKS_CLUSTER_NAME} \
                 --region ${AWS_REGION}
+                # wait for 3 minutes since only one fargate profile can be deleted at the same time
+                sleep 3m
               else
-                echo '----------------- no old resources found -----------------'
+                echo "----------------- no old resources found -----------------"
               fi
             done  
 
