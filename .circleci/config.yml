@@ -11,34 +11,34 @@ orbs:
 
 commands:
   # TODO: adapt to project
-  destroy-eks-cluster-stack:
-    description: Destroy EKS Cluster Stack.
-    steps:
-      - run:
-          name: Destroy environments
-          when: on_fail
-          command: |
-            # TODO: check first if pods are in cluster -> delete namespace & wait until done
-            # kubectl delete namespace ml-app
-            # TODO: check if EC2 Loadbalancer exists -> delete loadbalancer & wait until done
-            # TODO: check if security group for Cluster exists -> delete security group
-            CLUSTER_SG=aws ec2 describe-security-groups \
-            --region ${AWS_REGION} \
-            --filters Name=tag:Name,Values=${EKS_CLUSTER_NAME} \
-            --query "SecurityGroups[*].{ID:GroupId}" \
-            --output text
-            if [ -z "$CLUSTER_SG" ]
-            then
-                  echo "\$CLUSTER_SG is NULL"
-            else
-                  echo "Deleting \$CLUSTER_SG ${CLUSTER_SG}..."; aws ec2 delete-security-group ${CLUSTER_SG}
-            fi
-            # 
-            # TODO: check if Cluster exists -> delete Cluster & wait until done
-            # eksctl delete cluster --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION}
-            # TODO: check if Cloudformation stack exists -> delete cloudformation stacks & wait until done
-            aws cloudformation delete-stack \
-            --stack-name eksctl-ML-APP-CLUSTER-cluster
+  # destroy-eks-cluster-stack:
+  #   description: Destroy EKS Cluster Stack.
+  #   steps:
+  #     - run:
+  #         name: Destroy environments
+  #         when: on_fail
+  #         command: |
+  #           # TODO: check first if pods are in cluster -> delete namespace & wait until done
+  #           # kubectl delete namespace ml-app
+  #           # TODO: check if EC2 Loadbalancer exists -> delete loadbalancer & wait until done
+  #           # TODO: check if security group for Cluster exists -> delete security group
+  #           CLUSTER_SG=aws ec2 describe-security-groups \
+  #           --region ${AWS_REGION} \
+  #           --filters Name=tag:Name,Values=${EKS_CLUSTER_NAME} \
+  #           --query "SecurityGroups[*].{ID:GroupId}" \
+  #           --output text
+  #           if [ -z "$CLUSTER_SG" ]
+  #           then
+  #                 echo "\$CLUSTER_SG is NULL"
+  #           else
+  #                 echo "Deleting \$CLUSTER_SG ${CLUSTER_SG}..."; aws ec2 delete-security-group ${CLUSTER_SG}
+  #           fi
+  #           # 
+  #           # TODO: check if Cluster exists -> delete Cluster & wait until done
+  #           # eksctl delete cluster --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION}
+  #           # TODO: check if Cloudformation stack exists -> delete cloudformation stacks & wait until done
+  #           aws cloudformation delete-stack \
+  #           --stack-name eksctl-ML-APP-CLUSTER-cluster
 
   destroy-fargate-profile:
     description: Destroy Fargate profile.
@@ -130,14 +130,7 @@ jobs:
             # Push Docker image to AWS ECR repository
             docker push $DOCKERPATH
 
-  # ToDo
-  # optional element -> e.g. security scanning of Docker container
-  # scan_container:  
-
-
-# ToDo
   # create AWS Kubernetes Cluster -> AWS EKS
-  # include circleci id in stack names
   create_eks_cluster:  
     docker:
       - image: amazon/aws-cli
@@ -175,10 +168,8 @@ jobs:
               kubectl get pods --all-namespaces -o wide
             else
               echo "--- Existing EKS cluster ${EKS_CLUSTER_NAME} - no need for cluster creation ---"
-            fi  
-      # - destroy-eks-cluster-stack
+            fi
 
-  # ToDo
   setup_eks_loadbalancer: 
     docker:
       - image: amazon/aws-cli
