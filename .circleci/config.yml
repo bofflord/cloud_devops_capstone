@@ -243,7 +243,6 @@ jobs:
             kubectl -n kube-system rollout status deployment aws-load-balancer-controller
 
   create_fargate_profile:
-    # "${CIRCLE_WORKFLOW_ID:0:7}"  
     docker:
       - image: amazon/aws-cli
     steps:
@@ -274,7 +273,6 @@ jobs:
             aws eks list-fargate-profiles \
             --cluster-name ${EKS_CLUSTER_NAME} \
             --region ${AWS_REGION}
-
 
   deploy_container: 
     docker:
@@ -328,7 +326,7 @@ jobs:
             PUBLIC_IP=($(kubectl get ingress/ingress-ml-app -n ml-app-${CIRCLE_WORKFLOW_ID:0:7} | awk '$1=="ingress-ml-app"{print $4}'))
             cd test
             . smoketest.sh ${PUBLIC_IP} 80
-       - destroy-fargate-profile
+      - destroy-fargate-profile
 
   # use cloudfront for production container
   prod_promotion:  
