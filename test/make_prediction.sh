@@ -26,5 +26,3 @@ curl -d '{
 }'\
      -H "Content-Type: application/json" \
      -X POST http://$IP:$PORT/predict
-
-#TODO: replace localhost with variable; localhost for unit test; IP of AWS Container for smoke testing

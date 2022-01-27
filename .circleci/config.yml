@@ -8,38 +8,7 @@ orbs:
   aws-eks: circleci/aws-eks@2.1.0
   kubernetes: circleci/kubernetes@1.0
 
-
 commands:
-  # TODO: adapt to project
-  # destroy-eks-cluster-stack:
-  #   description: Destroy EKS Cluster Stack.
-  #   steps:
-  #     - run:
-  #         name: Destroy environments
-  #         when: on_fail
-  #         command: |
-  #           # TODO: check first if pods are in cluster -> delete namespace & wait until done
-  #           # kubectl delete namespace ml-app
-  #           # TODO: check if EC2 Loadbalancer exists -> delete loadbalancer & wait until done
-  #           # TODO: check if security group for Cluster exists -> delete security group
-  #           CLUSTER_SG=aws ec2 describe-security-groups \
-  #           --region ${AWS_REGION} \
-  #           --filters Name=tag:Name,Values=${EKS_CLUSTER_NAME} \
-  #           --query "SecurityGroups[*].{ID:GroupId}" \
-  #           --output text
-  #           if [ -z "$CLUSTER_SG" ]
-  #           then
-  #                 echo "\$CLUSTER_SG is NULL"
-  #           else
-  #                 echo "Deleting \$CLUSTER_SG ${CLUSTER_SG}..."; aws ec2 delete-security-group ${CLUSTER_SG}
-  #           fi
-  #           # 
-  #           # TODO: check if Cluster exists -> delete Cluster & wait until done
-  #           # eksctl delete cluster --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION}
-  #           # TODO: check if Cloudformation stack exists -> delete cloudformation stacks & wait until done
-  #           aws cloudformation delete-stack \
-  #           --stack-name eksctl-ML-APP-CLUSTER-cluster
-
   destroy-fargate-profile:
     description: Destroy Fargate profile.
     steps:
@@ -90,14 +59,6 @@ jobs:
             . venv/bin/activate
             make lint
 
-  # ToDo
-  # OPTIONAL
-  # create unit test of app 
-  # run app locally and send dummy request to API
-  # use unit test to verify expected result
-  # test_app:
-
-  # ToDo
   # store in AWS image repository -> AWS ECR
   build_container:
     docker:
@@ -402,7 +363,6 @@ jobs:
             aws cloudformation delete-stack --stack-name CloudFrontStack
       - destroy-fargate-profile
             
-  # ToDo
   # delete no longer required resources
   cleanup:
     docker:
@@ -456,14 +416,9 @@ jobs:
 workflows:
   default:
     jobs:
-      # Testing
-      # - build_container
-
       - build_app
-      # - test_app # optional
       - build_container:
           requires: [build_app]
-      # - scan_container # optional
       - create_eks_cluster:
           requires: [build_container]
           filters:
