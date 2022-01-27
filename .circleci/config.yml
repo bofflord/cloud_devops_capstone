@@ -39,6 +39,21 @@ commands:
             # TODO: check if Cloudformation stack exists -> delete cloudformation stacks & wait until done
             aws cloudformation delete-stack \
             --stack-name eksctl-ML-APP-CLUSTER-cluster
+
+  destroy-fargate-profile:
+    description: Destroy Fargate profile.
+    steps:
+      - run:
+          name: Destroy environments
+          when: on_fail
+          command: |
+            eksctl delete fargateprofile \
+                --name fargate_profile_ml-app-${CIRCLE_WORKFLOW_ID:0:7} \
+                --cluster ${EKS_CLUSTER_NAME} \
+                --region ${AWS_REGION}
+            # wait for 3 minutes since only one fargate profile can be deleted at the same time
+            sleep 3m
+
 jobs:
   build_app:
     docker:
@@ -336,7 +351,6 @@ jobs:
             # check ingress status
             kubectl get ingress/ingress-ml-app -n ml-app-${CIRCLE_WORKFLOW_ID:0:7}
 
-  # ToDo
   smoketest_app:
     docker:
       - image: amazon/aws-cli
@@ -362,7 +376,6 @@ jobs:
             cd test
             . smoketest.sh ${PUBLIC_IP} 80
             
-  # ToDo
   # use cloudfront for production container
   prod_promotion:  
     docker:
