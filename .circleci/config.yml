@@ -350,6 +350,7 @@ jobs:
             kubectl get service/service-ml-app -n ml-app-${CIRCLE_WORKFLOW_ID:0:7} 
             # check ingress status
             kubectl get ingress/ingress-ml-app -n ml-app-${CIRCLE_WORKFLOW_ID:0:7}
+      - destroy-fargate-profile
 
   smoketest_app:
     docker:
@@ -375,7 +376,8 @@ jobs:
             PUBLIC_IP=($(kubectl get ingress/ingress-ml-app -n ml-app-${CIRCLE_WORKFLOW_ID:0:7} | awk '$1=="ingress-ml-app"{print $4}'))
             cd test
             . smoketest.sh ${PUBLIC_IP} 80
-            
+       - destroy-fargate-profile
+
   # use cloudfront for production container
   prod_promotion:  
     docker:
@@ -407,6 +409,7 @@ jobs:
           when: on_fail
           command: |
             aws cloudformation delete-stack --stack-name CloudFrontStack
+      - destroy-fargate-profile
             
   # ToDo
   # delete no longer required resources
