@@ -85,7 +85,13 @@ source .devops/bin/activate
 ## Explanation of repository files
 
 ### CI/CD Pipeline and required infrastructure files
+* .circleci/config.yml: Circle CI configuration file which defines the CI/CD pipeline
+* infrastructure/fargate_full.yaml: Kubernetes Manifest which describes all Kubernetes Cluster resources for a deployed ML app.
+* infrastructure/cloudfront.yml: AWS CloudFormation stack for creation/ update of CloudFront distribution of ML app.
 
+### Smoketesting
+* all shell scrips (*.sh) in folder test.
+* additionally there python files (*.py) are included for a later extension to python testing.
 
 ### App and ML model files
 * app.py: flask app which incorporates ML model

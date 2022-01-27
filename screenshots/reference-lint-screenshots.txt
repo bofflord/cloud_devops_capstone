@@ -1,0 +1,8 @@
+Include with your Linting step both a failed Linting screenshot and a successful Linting screenshot to show the Linter working properly.
+
+Failed lint: 
+https://app.circleci.com/pipelines/github/bofflord/cloud_devops_capstone/77/workflows/b6ee123f-7996-49cb-9e9f-d8fd382b85fa/jobs/146
+
+Passed lint: 
+https://app.circleci.com/pipelines/github/bofflord/cloud_devops_capstone/78/workflows/a87185d7-703d-4ba1-95df-319e861c8d2d/jobs/147
+
