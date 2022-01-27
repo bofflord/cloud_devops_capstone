@@ -58,7 +58,7 @@ jobs:
           command: |
             python3 -m venv venv
             . venv/bin/activate
-            echo "Virtual Environment created, now installing requirments..."
+            echo "Virtual Environment created, now installing requirements..."
             make install
             # Install hadolint
             echo "Requirements installed, now installing hadolint..."
@@ -325,8 +325,8 @@ jobs:
       - run:
           name: deploy container to Fargate cluster
           command: |
-            # kubectl apply -f fargate_full.yaml
-            cat fargate_full.yaml | sed "s/{{WORKFLOW_ID}}/${CIRCLE_WORKFLOW_ID:0:7}/g" | kubectl apply -f -
+            # kubectl apply -f infrastructure/fargate_full.yaml
+            cat infrastructure/fargate_full.yaml | sed "s/{{WORKFLOW_ID}}/${CIRCLE_WORKFLOW_ID:0:7}/g" | kubectl apply -f -
             # list all resources in namespace
             kubectl get all -n ml-app-${CIRCLE_WORKFLOW_ID:0:7}
             # check if deployment has completed
